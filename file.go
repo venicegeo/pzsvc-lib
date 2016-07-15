@@ -15,7 +15,6 @@
 package pzsvc
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
