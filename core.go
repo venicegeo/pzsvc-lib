@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -30,28 +31,18 @@ import (
 // said response JSON, an address to call and an authKey to send, it will submit
 // the get request, demarshal the result into the given object, and return. It
 // returns the response buffer, in case it is needed for debugging purposes.
-func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}) (*bytes.Buffer, error) {
-// TODO: could very easily refactor this to cover PUT/POST/DELETE as well
+func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}) ([]byte, error) {
 
 	resp, err := SubmitSinglePart(method, bodyStr, address, authKey)
 	if resp == nil {
 		return nil, fmt.Errorf("GetPzObj: no response")
 	}
+	defer resp.Body.Close()
 	if err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
 
-	respBuf := &bytes.Buffer{}
-
-	_, err = respBuf.ReadFrom(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		return respBuf, err
-	}
-
-	err = json.Unmarshal(respBuf.Bytes(), outpObj)
-	return respBuf, err
+	return ReadBodyJSON(&outpObj, resp.Body)
 }
 
 
@@ -164,12 +155,12 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 				return respObj.Result, nil
 			}
 			if respObj.Status == "Fail" {
-				return nil, errors.New("Piazza failure when acquiring DataId.  Response json: " + respBuf.String())
+				return nil, errors.New("Piazza failure when acquiring DataId.  Response json: " + string(respBuf))
 			}
 			if respObj.Status == "Error" {
-				return nil, errors.New("Piazza error when acquiring DataId.  Response json: " + respBuf.String())
+				return nil, errors.New("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
 			}
-			return nil, errors.New("Unknown status when acquiring DataId.  Response json: " + respBuf.String())
+			return nil, errors.New("Unknown status when acquiring DataId.  Response json: " + string(respBuf))
 		}
 	}
 
@@ -179,18 +170,36 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 // GetJobID is a simple function to extract the job ID from
 // the standard response to job-creating Pz calls
 func GetJobID(resp *http.Response) (string, error) {
-
-	respBuf := &bytes.Buffer{}
-	_, err := respBuf.ReadFrom(resp.Body)
-	if err != nil {
-		return "", err
-	}
-// need to decide exactly how we're going to treat these errors
 	var respObj JobResp
-	err = json.Unmarshal(respBuf.Bytes(), &respObj)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
+	_, err := ReadBodyJSON(&respObj, resp.Body)
+	
+	return respObj.JobID, err
+}
 
-	return respObj.JobID, nil
+// SliceToCommaSep takes a string slice, and turns it into a comma-separated
+// list of strings, suitable for JSON.
+func SliceToCommaSep(inSlice []string) string {
+	sliLen := len(inSlice)
+	if (sliLen == 0){
+		return ""
+	}
+	accum := inSlice[0]
+	for i := 1; i < sliLen; i++ {
+		accum = accum + "," + inSlice[i]
+	}
+	return accum
+}
+
+// ReadBodyJSON takes the body of either a request object or a response
+// object, pulls out the body, and attempts to interpret it as JSON into
+// the given interface format.  It's mostly there as a minor simplifying
+// function.
+func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
+	rBytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}	
+
+	err = json.Unmarshal(rBytes, output)	
+	return rBytes, err
 }

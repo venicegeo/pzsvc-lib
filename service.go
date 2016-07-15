@@ -15,8 +15,8 @@
 package pzsvc
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -105,10 +105,10 @@ func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
 
 	formVal = make(map[string][]string)
 	formVal.Set("cmd", inpObj.FuncStr)
-	formVal.Set("inFiles", sliceToCommaSep(inpObj.InFiles))
-	formVal.Set("outGeoJson", sliceToCommaSep(inpObj.OutGeoJSON))
-	formVal.Set("outTiffs", sliceToCommaSep(inpObj.OutGeoTIFF))
-	formVal.Set("outTxt", sliceToCommaSep(inpObj.OutTxt))
+	formVal.Set("inFiles", SliceToCommaSep(inpObj.InFiles))
+	formVal.Set("outGeoJson", SliceToCommaSep(inpObj.OutGeoJSON))
+	formVal.Set("outTiffs", SliceToCommaSep(inpObj.OutGeoTIFF))
+	formVal.Set("outTxt", SliceToCommaSep(inpObj.OutTxt))
 	formVal.Set("authKey", inpObj.AuthKey)
 	fmt.Println(inpObj.FuncStr)
 
@@ -117,32 +117,14 @@ func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
 		return nil, fmt.Errorf(`PostForm: %s`, err.Error())
 	}
 	
-	respBuf := &bytes.Buffer{}
-	_, err = respBuf.ReadFrom(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf(`ReadFrom: %s`, err.Error())
-	}
-fmt.Println(respBuf.String())
 	var respObj execOut
-	err = json.Unmarshal(respBuf.Bytes(), &respObj)
+	var respBytes []byte
+	respBytes, err = ReadBodyJSON(&respObj, resp.Body)
 	if err != nil {
-		fmt.Printf(`Unmarshalling error.  Json as follows:\n%s`, respBuf.String())
-		return nil, fmt.Errorf(`Unmarshalling error: %s.  Json: %s`, err.Error(), respBuf.String())
+		errString := fmt.Sprintf(`Unmarshalling error: %s.  Json: %s`, err.Error(), string(respBytes))
+		fmt.Printf(errString)
+		return nil, errors.New(errString)
 	}
 	
 	return respObj.OutFiles, nil
-}
-
-// takes a string slice, and turns it into a comma-separated list of strings,
-// suitable for JSON.
-func sliceToCommaSep(inSlice []string) string {
-	sliLen := len(inSlice)
-	if (sliLen == 0){
-		return ""
-	}
-	accum := inSlice[0]
-	for i := 1; i < sliLen; i++ {
-		accum = accum + "," + inSlice[i]
-	}
-	return accum
 }

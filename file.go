@@ -132,7 +132,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		return "", err
 	}
 
-	jobID, err := getJobID(resp)
+	jobID, err := GetJobID(resp)
 	if err != nil {
 		return "", err
 	}
@@ -198,7 +198,7 @@ func DeployToGeoServer(dataID, pzAddr, authKey string) (string, error) {
 		return "", err
 	}
 		
-	jobID, err := getJobID(resp)
+	jobID, err := GetJobID(resp)
 	if err != nil {
 		return "", err
 	}
@@ -209,21 +209,4 @@ func DeployToGeoServer(dataID, pzAddr, authKey string) (string, error) {
 	}
 
 	return result.Deployment.DeplID, nil
-}
-
-func getJobID (resp *http.Response) (string, error) {
-
-	respBuf := &bytes.Buffer{}
-	_, err := respBuf.ReadFrom(resp.Body)
-	if err != nil {
-		return "", err
-	}
-// need to decide exactly how we're going to treat these errors
-	var respObj JobResp
-	err = json.Unmarshal(respBuf.Bytes(), &respObj)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	return respObj.JobID, nil
 }
