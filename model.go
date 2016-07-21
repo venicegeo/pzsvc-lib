@@ -15,7 +15,7 @@
 package pzsvc
 
 import (
-	"time"
+	//"time"
 )
 
 // Intent: the following types are designed to correspond with the types
@@ -199,7 +199,7 @@ type SvcWrapper struct {
 
 
 /******** Event objects *******/
-
+/*
 // expresses the idea of "this ES query returns an event"
 // Query is specific to the event type
 type Condition struct {
@@ -248,4 +248,4 @@ type EventType struct {
 	Mapping		map[string]string	`json:"mapping" binding:"required"`
 	CreatedBy	string				`json:"createdBy"`
 	CreatedOn	time.Time			`json:"createdOn"`
-}
+}*/

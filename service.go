@@ -26,10 +26,10 @@ import (
 // one, it returns the service ID.  If it does not, returns an empty string.  Currently
 // only able to search on service name.  Will be much more viable as a long-term answer
 // if/when it's able to search on both service name and submitting user.
-func FindMySvc(svcName, pzAddr, authKey string) (string, error) {
+func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, error) {
 	query := pzAddr + "/service?per_page=1000&keyword=" + url.QueryEscape(svcName)
 	var respObj SvcWrapper
-	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj)
+	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj, client)
 	if err != nil {
 		return "", err
 	}
@@ -48,10 +48,12 @@ func FindMySvc(svcName, pzAddr, authKey string) (string, error) {
 // initial registration.  If it has not, it re-registers.  Best practice is to do this
 // every time your service starts up.  For those of you code-reading, the filter is
 // still somewhat rudimentary.  It will improve as better tools become available.
-func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey string, attributes map[string]string) error {
+func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey string,
+						attributes map[string]string,
+						client *http.Client) error {
 	
 	fmt.Println("Finding")
-	svcID, err := FindMySvc(svcName, pzAddr, authKey)
+	svcID, err := FindMySvc(svcName, pzAddr, authKey, client)
 	if err != nil {
 		return err
 	}
@@ -66,10 +68,10 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 
 	if svcID == "" {
 		fmt.Println("Registering")
-		_, err = SubmitSinglePart("POST", string(svcJSON), pzAddr+"/service", authKey)
+		_, err = SubmitSinglePart("POST", string(svcJSON), pzAddr+"/service", authKey, client)
 	} else {
 		fmt.Println("Updating")
-		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey)
+		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey, client)
 	}
 	if err != nil {
 		return err
@@ -88,6 +90,7 @@ type ExecIn struct {
 	OutTxt		[]string
 	AlgoURL		string
 	AuthKey		string
+	Client		*http.Client
 }
 
 // CallPzsvcExec is a function designed to simplify calls to pzsvc-exec.

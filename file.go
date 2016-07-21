@@ -24,6 +24,8 @@ import (
 	"os"
 )
 
+// locString simplifies certain local processes that wish to interact with
+// files that may or may not be in a subfolder.
 func locString(subFold, fname string ) string {
 	if subFold == "" {
 		return fmt.Sprintf(`./%s`, fname)
@@ -33,9 +35,9 @@ func locString(subFold, fname string ) string {
 
 // DownloadBytes retrieves a file from Pz using the file access API and then
 // returns the results as a byte slice
-func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
+func DownloadBytes(dataID, pzAddr, authKey string, client *http.Client) ([]byte, error) {
 
-	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey)
+	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey, client)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -52,9 +54,9 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 }
 
 // Download retrieves a file from Pz using the file access API
-func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
+func Download(dataID, subFold, pzAddr, authKey string, client *http.Client) (string, error) {
 
-	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey)
+	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey, client)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -83,10 +85,11 @@ func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 	return filename, nil
 }
 
-// Ingest ingests the given bytes to Pz.  
+// Ingest ingests the given bytes to Piazza.  
 func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 			ingData []byte,
-			props map[string]string) (string, error) {
+			props map[string]string,
+			client *http.Client) (string, error) {
 
 	var fileData []byte
 	var resp *http.Response
@@ -123,9 +126,9 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	}
 
 	if (fileData != nil) {
-		resp, err = SubmitMultipart(string(bbuff), (pzAddr + "/data/file"), fName, authKey, fileData)
+		resp, err = SubmitMultipart(string(bbuff), (pzAddr + "/data/file"), fName, authKey, fileData, client)
 	} else {
-		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey)
+		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey, client)
 	}
 	if err != nil {
 		return "", err
@@ -136,7 +139,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		return "", err
 	}
 
-	result, err := GetJobResponse(jobID, pzAddr, authKey)
+	result, err := GetJobResponse(jobID, pzAddr, authKey, client)
 	if err != nil {
 		return "", err
 	}
@@ -144,9 +147,10 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	return result.DataID, err
 }
 
-// IngestFile ingests the given file
+// IngestFile ingests the given file to Piazza
 func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey string,
-				props map[string]string) (string, error) {
+				props map[string]string,
+				client *http.Client) (string, error) {
 
 	path := locString(subFold, fName)
 
@@ -157,15 +161,15 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 	if len(fData) == 0 {
 		return "", fmt.Errorf(`pzsvc.IngestFile: File "%s" read as empty`, fName)
 	}
-	return Ingest(fName, fType, pzAddr, sourceName, version, authKey, fData, props)
+	return Ingest(fName, fType, pzAddr, sourceName, version, authKey, fData, props, client)
 }
 
 // GetFileMeta retrieves the metadata for a given dataID in the S3 bucket
-func GetFileMeta(dataID, pzAddr, authKey string) (*DataResource, error) {
+func GetFileMeta(dataID, pzAddr, authKey string, client *http.Client) (*DataResource, error) {
 
 	url := fmt.Sprintf(`%s/data/%s`, pzAddr, dataID)
 	var respObj IngJobType
-	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
+	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj, client)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +178,7 @@ func GetFileMeta(dataID, pzAddr, authKey string) (*DataResource, error) {
 }
 
 // UpdateFileMeta updates the metadata for a given dataID in the S3 bucket
-func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string ) error {
+func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string, client *http.Client) error {
 	
 	var meta struct { Metadata map[string]string `json:"metadata"` }
 	meta.Metadata = newMeta
@@ -183,16 +187,20 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string ) 
 		return err
 	}
 	
-	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey)
+	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey, client)
 	return err
 }
 
 // DeployToGeoServer calls the Pz "provision" endpoint - causing the file indicated
-// by dataId to be deployed to the local GeoServer instance.
-func DeployToGeoServer(dataID, pzAddr, authKey string) (string, error) {
-	outJSON := fmt.Sprintf(`{"dataId":"%s","deploymentType":"geoserver","type":"access"}`, dataID)
+// by dataId to be deployed to the local GeoServer instance, and returning the ID of
+// the new layer.  If lGroupID is included, the layer is also added to the layer
+// group with that ID.
+func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string, client *http.Client) (string, error) {
+	outJSON := fmt.Sprintf(	`{"dataId":"%s","deploymentGroupId":"%s","deploymentType":"geoserver","type":"access"}`,
+							dataID,
+							lGroupID)
 
-	resp, err := SubmitSinglePart("POST", outJSON, fmt.Sprintf(`%s/deployment`, pzAddr), authKey)
+	resp, err := SubmitSinglePart("POST", outJSON, fmt.Sprintf(`%s/deployment`, pzAddr), authKey, client)
 	if err != nil {
 		return "", err
 	}
@@ -202,10 +210,31 @@ func DeployToGeoServer(dataID, pzAddr, authKey string) (string, error) {
 		return "", err
 	}
 
-	result, err := GetJobResponse(jobID, pzAddr, authKey)
+	result, err := GetJobResponse(jobID, pzAddr, authKey, client)
 	if err != nil {
 		return "", err
 	}
 
 	return result.Deployment.DeplID, nil
+}
+
+// AddGeoServerLayerGroup takes the bare-bones contact information for the local Piazza
+// instance, submits a request for a new geoserver layer group, and returns the identifying
+// uuid for that layer group (or an error).
+func AddGeoServerLayerGroup(pzAddr, authKey string, client *http.Client) (string, error) {
+
+type dataStruct struct{
+	DeploymentGroupID	string		`json:"deploymentGroupId,omitempty"`
+	CreatedBy			string		`json:"createdBy,omitempty"`
+	HasGeoServerLayer	string		`json:"hasGetServerLayer,omitempty"`
+}
+
+var respObj struct{
+	Type				string		`json:"type,omitempty"`
+	Data				dataStruct	`json:"data,omitempty"`
+}
+
+_, err := RequestKnownJSON("POST", "", pzAddr + "/deployment/group", authKey, &respObj, client)
+
+return respObj.Data.DeploymentGroupID, err
 }

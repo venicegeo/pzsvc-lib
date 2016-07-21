@@ -31,9 +31,9 @@ import (
 // said response JSON, an address to call and an authKey to send, it will submit
 // the get request, demarshal the result into the given object, and return. It
 // returns the response buffer, in case it is needed for debugging purposes.
-func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}) ([]byte, error) {
+func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}, client *http.Client) ([]byte, error) {
 
-	resp, err := SubmitSinglePart(method, bodyStr, address, authKey)
+	resp, err := SubmitSinglePart(method, bodyStr, address, authKey, client)
 	if resp == nil {
 		return nil, fmt.Errorf("GetPzObj: no response")
 	}
@@ -48,7 +48,7 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 
 // SubmitMultipart sends a multi-part POST call, including an optional uploaded file,
 // and returns the response.  Primarily intended to support Ingest calls.
-func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte) (*http.Response, error) {
+func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte, client *http.Client) (*http.Response, error) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -86,20 +86,19 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 	fileReq.Header.Add("Content-Type", writer.FormDataContentType())
 	fileReq.Header.Add("Authorization", authKey)
 
-	client := &http.Client{}
 	resp, err := client.Do(fileReq)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, fmt.Errorf("Failed to POST multipart to " + address + " Status: " + resp.Status)
+		return resp, fmt.Errorf("Failed to POST multipart to " + address + " Status: " + resp.Status)
 	}
 	return resp, err
 }
 
 // SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to Pz and returns the
 // Includes the necessary headers.
-func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, error) {
+func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client) (*http.Response, error) {
 
 	var fileReq *http.Request
 	var err error
@@ -116,13 +115,12 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 	
 	fileReq.Header.Add("Authorization", authKey)
 
-	client := &http.Client{}
 	resp, err := client.Do(fileReq)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, fmt.Errorf("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
+		return resp, fmt.Errorf("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
 	}
 
 	return resp, err
@@ -130,7 +128,7 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 
 // GetJobResponse will repeatedly poll the job status on the given job Id
 // until job completion, then acquires and returns the DataResult.  
-func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
+func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataResult, error) {
 
 	if jobID == "" {
 		return nil, fmt.Errorf(`JobID not provided after ingest.  Cannot acquire dataID.`)
@@ -139,7 +137,7 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 	for i := 0; i < 180; i++ { // will wait up to 3 minutes
 
 		var respObj JobResp
-		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &respObj)
+		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &respObj, client)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +170,9 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 func GetJobID(resp *http.Response) (string, error) {
 	var respObj JobResp
 	_, err := ReadBodyJSON(&respObj, resp.Body)
-	
+	if respObj.JobID == "" && err == nil {
+		err = errors.New("GetJobID: response did not contain Job ID.")
+	}
 	return respObj.JobID, err
 }
 
