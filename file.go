@@ -95,12 +95,18 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	var resp *http.Response
 
 	desc := fmt.Sprintf("%s uploaded by %s.", fType, sourceName)
-	rMeta := ResMeta{fName, desc, ClassType{"UNCLASSIFIED"}, version, make(map[string]string)} //TODO: implement classification
+	rMeta := ResMeta{
+				Name:fName,
+				Format:fType,
+				ClassType:ClassType{"UNCLASSIFIED"},
+				Version: version,
+				Description:desc}
+		
 	for key, val := range props {
 		rMeta.Metadata[key] = val
 	}
 
-	dType := DataType{"", fType, "", nil}
+	dType := DataType{Type:fType}
 
 	switch fType {
 		case "raster" : {
@@ -118,8 +124,8 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		}
 	}
 
-	dRes := DataResource{dType, rMeta, "", nil}
-	jType := IngJobType{"ingest", true, dRes}
+	dRes := DataDesc{"", dType, rMeta, nil}
+	jType := IngestReq{dRes, true, "ingest"}
 	bbuff, err := json.Marshal(jType)
 	if err != nil {
 		return "", err
@@ -165,10 +171,10 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 }
 
 // GetFileMeta retrieves the metadata for a given dataID in the S3 bucket
-func GetFileMeta(dataID, pzAddr, authKey string, client *http.Client) (*DataResource, error) {
+func GetFileMeta(dataID, pzAddr, authKey string, client *http.Client) (*DataDesc, error) {
 
 	url := fmt.Sprintf(`%s/data/%s`, pzAddr, dataID)
-	var respObj IngJobType
+	var respObj struct {Data DataDesc}
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj, client)
 	if err != nil {
 		return nil, err

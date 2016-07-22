@@ -28,7 +28,7 @@ import (
 // if/when it's able to search on both service name and submitting user.
 func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, error) {
 	query := pzAddr + "/service?per_page=1000&keyword=" + url.QueryEscape(svcName)
-	var respObj SvcWrapper
+	var respObj SvcList
 	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj, client)
 	if err != nil {
 		return "", err
@@ -59,11 +59,14 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 	}
 
 	svcClass := ClassType{"UNCLASSIFIED"} // TODO: this will have to be updated at some point.
-	metaObj := ResMeta{ svcName, svcDesc, svcClass, svcVers, make(map[string]string) }
+	metaObj := ResMeta{	Name:svcName,
+						Description:svcDesc,
+						ClassType:svcClass,
+						Version:svcVers }
 	for key, val := range attributes {
 		metaObj.Metadata[key] = val
 	}
-	svcObj := Service{ svcID, svcURL, "", "POST", metaObj }
+	svcObj := Service{ ServiceID:svcID, URL:svcURL, Method:"POST", ResMeta:metaObj }
 	svcJSON, err := json.Marshal(svcObj)
 
 	if svcID == "" {

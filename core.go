@@ -136,7 +136,7 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 
 	for i := 0; i < 180; i++ { // will wait up to 3 minutes
 
-		var respObj JobResp
+		var respObj JobStatusResp
 		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &respObj, client)
 		if err != nil {
 			return nil, err
@@ -145,8 +145,8 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 		if	respObj.Status == "Submitted" ||
 			respObj.Status == "Running" ||
 			respObj.Status == "Pending" ||
-			( respObj.Status == "Error" && respObj.Message == "Job Not Found." ) ||
-			( respObj.Status == "Success" && respObj.Result == nil ) {
+			( respObj.Status == "Success" && respObj.Result == nil ) ||
+			( respObj.Status == "Error" && respObj.Result.Message == "Job Not Found." )  {
 			time.Sleep(time.Second)
 		} else {
 			if respObj.Status == "Success" {
@@ -168,12 +168,12 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 // GetJobID is a simple function to extract the job ID from
 // the standard response to job-creating Pz calls
 func GetJobID(resp *http.Response) (string, error) {
-	var respObj JobResp
+	var respObj JobInitResp
 	_, err := ReadBodyJSON(&respObj, resp.Body)
-	if respObj.JobID == "" && err == nil {
+	if respObj.Data.JobID == "" && err == nil {
 		err = errors.New("GetJobID: response did not contain Job ID.")
 	}
-	return respObj.JobID, err
+	return respObj.Data.JobID, err
 }
 
 // SliceToCommaSep takes a string slice, and turns it into a comma-separated
