@@ -62,7 +62,8 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 	metaObj := ResMeta{	Name:svcName,
 						Description:svcDesc,
 						ClassType:svcClass,
-						Version:svcVers }
+						Version:svcVers,
+						Metadata: make(map[string]string) }
 	for key, val := range attributes {
 		metaObj.Metadata[key] = val
 	}

@@ -100,7 +100,8 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 				Format:fType,
 				ClassType:ClassType{"UNCLASSIFIED"},
 				Version: version,
-				Description:desc}
+				Description:desc,
+				Metadata: make(map[string]string) }
 		
 	for key, val := range props {
 		rMeta.Metadata[key] = val

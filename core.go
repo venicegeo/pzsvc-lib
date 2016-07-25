@@ -131,17 +131,18 @@ func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client)
 func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataResult, error) {
 
 	if jobID == "" {
-		return nil, fmt.Errorf(`JobID not provided after ingest.  Cannot acquire dataID.`)
+		return nil, fmt.Errorf(`JobID not provided.  Cannot acquire DataResult.`)
 	}
 
 	for i := 0; i < 180; i++ { // will wait up to 3 minutes
 
-		var respObj JobStatusResp
-		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &respObj, client)
+		var outpObj struct { Data JobStatusResp `json:"data,omitempty"` }
+		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &outpObj, client)
 		if err != nil {
 			return nil, err
 		}
 
+		respObj := &outpObj.Data
 		if	respObj.Status == "Submitted" ||
 			respObj.Status == "Running" ||
 			respObj.Status == "Pending" ||
@@ -158,7 +159,7 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 			if respObj.Status == "Error" {
 				return nil, errors.New("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
 			}
-			return nil, errors.New("Unknown status when acquiring DataId.  Response json: " + string(respBuf))
+			return nil, errors.New(`Unknown status "` + respObj.Status + `" when acquiring DataId.  Response json: ` + string(respBuf))
 		}
 	}
 
