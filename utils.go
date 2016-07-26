@@ -39,3 +39,17 @@ func errWithRef(errStr string) error {
 	}
 	return errors.New(errStr)
 }
+
+// SliceToCommaSep takes a string slice, and turns it into a comma-separated
+// list of strings, suitable for JSON.
+func SliceToCommaSep(inSlice []string) string {
+	sliLen := len(inSlice)
+	if (sliLen == 0){
+		return ""
+	}
+	accum := inSlice[0]
+	for i := 1; i < sliLen; i++ {
+		accum = accum + "," + inSlice[i]
+	}
+	return accum
+}

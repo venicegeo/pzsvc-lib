@@ -23,10 +23,9 @@ import (
 
 // FindMySvc Searches Pz for a service matching the input information.  If it finds
 // one, it returns the service ID.  If it does not, returns an empty string.  Currently
-// only able to search on service name.  Will be much more viable as a long-term answer
-// if/when it's able to search on both service name and submitting user.
+// searches on service name and submitting user.
 func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, error) {
-	query := pzAddr + "/service?per_page=1000&keyword=" + url.QueryEscape(svcName)
+	query := pzAddr + "/service/me?per_page=1000&keyword=" + url.QueryEscape(svcName)
 	var respObj SvcList
 	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj, client)
 	if err != nil {

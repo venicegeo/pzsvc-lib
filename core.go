@@ -93,8 +93,8 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 	return resp, addRef(err)
 }
 
-// SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to Pz and returns the
-// Includes the necessary headers.
+// SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to the target URL
+// and returns the result.  Includes the necessary headers.
 func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client) (*http.Response, error) {
 
 	var fileReq *http.Request
@@ -172,20 +172,6 @@ func GetJobID(resp *http.Response) (string, error) {
 		err = errWithRef("GetJobID: response did not contain Job ID.")
 	}
 	return respObj.Data.JobID, addRef(err)
-}
-
-// SliceToCommaSep takes a string slice, and turns it into a comma-separated
-// list of strings, suitable for JSON.
-func SliceToCommaSep(inSlice []string) string {
-	sliLen := len(inSlice)
-	if (sliLen == 0){
-		return ""
-	}
-	accum := inSlice[0]
-	for i := 1; i < sliLen; i++ {
-		accum = accum + "," + inSlice[i]
-	}
-	return accum
 }
 
 // ReadBodyJSON takes the body of either a request object or a response
