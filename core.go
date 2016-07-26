@@ -17,7 +17,6 @@ package pzsvc
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,14 +33,12 @@ import (
 func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}, client *http.Client) ([]byte, error) {
 
 	resp, err := SubmitSinglePart(method, bodyStr, address, authKey, client)
-	if resp == nil {
-		return nil, fmt.Errorf("GetPzObj: no response")
+	if resp != nil {
+		defer resp.Body.Close()
 	}
-	defer resp.Body.Close()
-	if err != nil {
-		return nil, err
+	if err != nil {	
+		return nil, addRef(err)
 	}
-
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
 
@@ -55,32 +52,32 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 	err := writer.WriteField("data", bodyStr)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 
 	if fileData != nil {
 		part, err := writer.CreateFormFile("file", filename)
 		if err != nil {
-			return nil, err
+			return nil, addRef(err)
 		}
 		if (part == nil) {
-			return nil, fmt.Errorf("Failure in Form File Creation.")
+			return nil, errWithRef("Failure in Form File Creation.")
 		}
 
 		_, err = io.Copy(part, bytes.NewReader(fileData))
 		if err != nil {
-			return nil, err
+			return nil, addRef(err)
 		}
 	}
 
 	err = writer.Close()
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 
 	fileReq, err := http.NewRequest("POST", address, body)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 
 	fileReq.Header.Add("Content-Type", writer.FormDataContentType())
@@ -88,12 +85,12 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 	resp, err := client.Do(fileReq)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, fmt.Errorf("Failed to POST multipart to " + address + " Status: " + resp.Status)
+		return resp, errWithRef("Failed to POST multipart to " + address + " Status: " + resp.Status)
 	}
-	return resp, err
+	return resp, addRef(err)
 }
 
 // SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to Pz and returns the
@@ -106,24 +103,24 @@ func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client)
 	if bodyStr != "" {
 		fileReq, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(bodyStr)))
 		if err != nil {
-			return nil, err
+			return nil, addRef(err)
 		}
 		fileReq.Header.Add("Content-Type", "application/json")
 	} else {
 		fileReq, err = http.NewRequest(method, url, nil)
+		if err != nil {
+			return nil, addRef(err)
+		}
 	}
 	
 	fileReq.Header.Add("Authorization", authKey)
 
 	resp, err := client.Do(fileReq)
-	if err != nil {
-		return nil, err
-	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, fmt.Errorf("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
+		return resp, errWithRef("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
 	}
 
-	return resp, err
+	return resp, addRef(err)
 }
 
 // GetJobResponse will repeatedly poll the job status on the given job Id
@@ -139,7 +136,7 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 		var outpObj struct { Data JobStatusResp `json:"data,omitempty"` }
 		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &outpObj, client)
 		if err != nil {
-			return nil, err
+			return nil, addRef(err)
 		}
 
 		respObj := &outpObj.Data
@@ -154,16 +151,16 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 				return respObj.Result, nil
 			}
 			if respObj.Status == "Fail" {
-				return nil, errors.New("Piazza failure when acquiring DataId.  Response json: " + string(respBuf))
+				return nil, errWithRef("Piazza failure when acquiring DataId.  Response json: " + string(respBuf))
 			}
 			if respObj.Status == "Error" {
-				return nil, errors.New("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
+				return nil, errWithRef("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
 			}
-			return nil, errors.New(`Unknown status "` + respObj.Status + `" when acquiring DataId.  Response json: ` + string(respBuf))
+			return nil, errWithRef(`Unknown status "` + respObj.Status + `" when acquiring DataId.  Response json: ` + string(respBuf))
 		}
 	}
 
-	return nil, fmt.Errorf("Never completed.  JobId: %s", jobID)
+	return nil, errWithRef("Never completed.  JobId: " + jobID)
 }
 
 // GetJobID is a simple function to extract the job ID from
@@ -172,9 +169,9 @@ func GetJobID(resp *http.Response) (string, error) {
 	var respObj JobInitResp
 	_, err := ReadBodyJSON(&respObj, resp.Body)
 	if respObj.Data.JobID == "" && err == nil {
-		err = errors.New("GetJobID: response did not contain Job ID.")
+		err = errWithRef("GetJobID: response did not contain Job ID.")
 	}
-	return respObj.Data.JobID, err
+	return respObj.Data.JobID, addRef(err)
 }
 
 // SliceToCommaSep takes a string slice, and turns it into a comma-separated
@@ -198,9 +195,9 @@ func SliceToCommaSep(inSlice []string) string {
 func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	rBytes, err := ioutil.ReadAll(body)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}	
 
 	err = json.Unmarshal(rBytes, output)	
-	return rBytes, err
+	return rBytes, addRef(err)
 }

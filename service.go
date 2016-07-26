@@ -16,7 +16,6 @@ package pzsvc
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -31,7 +30,7 @@ func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, er
 	var respObj SvcList
 	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj, client)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	for _, checkServ := range respObj.Data {
@@ -55,7 +54,7 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 	fmt.Println("Finding")
 	svcID, err := FindMySvc(svcName, pzAddr, authKey, client)
 	if err != nil {
-		return err
+		return addRef(err)
 	}
 
 	svcClass := ClassType{"UNCLASSIFIED"} // TODO: this will have to be updated at some point.
@@ -78,7 +77,7 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey, client)
 	}
 	if err != nil {
-		return err
+		return addRef(err)
 	}
 
 	return nil
@@ -130,8 +129,11 @@ func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
 	if err != nil {
 		errString := fmt.Sprintf(`Unmarshalling error: %s.  Json: %s`, err.Error(), string(respBytes))
 		fmt.Printf(errString)
-		return nil, errors.New(errString)
+		return nil, errWithRef(errString)
 	}
 	
+	fmt.Println("output:")
+	fmt.Println(string(respBytes))
+
 	return respObj.OutFiles, nil
 }

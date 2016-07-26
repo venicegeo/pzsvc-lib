@@ -42,12 +42,12 @@ func DownloadBytes(dataID, pzAddr, authKey string, client *http.Client) ([]byte,
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 
 	return b, nil
@@ -61,7 +61,7 @@ func Download(dataID, subFold, pzAddr, authKey string, client *http.Client) (str
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	contDisp := resp.Header.Get("Content-Disposition")
@@ -71,12 +71,12 @@ func Download(dataID, subFold, pzAddr, authKey string, client *http.Client) (str
 		b := make([]byte, 100)
 		resp.Body.Read(b)
 		
-		return "", fmt.Errorf(`File for DataID %s unnamed.  Probable ingest error.  Initial response characters: %s`, dataID, string(b))
+		return "", errWithRef(`File for DataID ` + dataID + ` unnamed.  Probable ingest error.  Initial response characters: ` + string(b))
 	}
 	
 	out, err := os.Create(locString(subFold, filename))
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	defer out.Close()
@@ -129,7 +129,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	jType := IngestReq{dRes, true, "ingest"}
 	bbuff, err := json.Marshal(jType)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	if (fileData != nil) {
@@ -138,20 +138,20 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey, client)
 	}
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey, client)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 	
-	return result.DataID, err
+	return result.DataID, addRef(err)
 }
 
 // IngestFile ingests the given file to Piazza
@@ -163,10 +163,10 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 
 	fData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 	if len(fData) == 0 {
-		return "", fmt.Errorf(`pzsvc.IngestFile: File "%s" read as empty`, fName)
+		return "", errWithRef(`File "` + fName + `" read as empty.`)
 	}
 	return Ingest(fName, fType, pzAddr, sourceName, version, authKey, fData, props, client)
 }
@@ -178,7 +178,7 @@ func GetFileMeta(dataID, pzAddr, authKey string, client *http.Client) (*DataDesc
 	var respObj struct {Data DataDesc}
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj, client)
 	if err != nil {
-		return nil, err
+		return nil, addRef(err)
 	}
 	
 	return &respObj.Data, nil
@@ -191,11 +191,11 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string, c
 	meta.Metadata = newMeta
 	jbuff, err := json.Marshal(meta)
 	if err != nil {
-		return err
+		return addRef(err)
 	}
 	
 	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey, client)
-	return err
+	return addRef(err)
 }
 
 // DeployToGeoServer calls the Pz "provision" endpoint - causing the file indicated
@@ -209,17 +209,17 @@ func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string, client *http.Cl
 
 	resp, err := SubmitSinglePart("POST", outJSON, fmt.Sprintf(`%s/deployment`, pzAddr), authKey, client)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 		
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey, client)
 	if err != nil {
-		return "", err
+		return "", addRef(err)
 	}
 
 	return result.Deployment.DeplID, nil
@@ -230,18 +230,18 @@ func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string, client *http.Cl
 // uuid for that layer group (or an error).
 func AddGeoServerLayerGroup(pzAddr, authKey string, client *http.Client) (string, error) {
 
-type dataStruct struct{
-	DeploymentGroupID	string		`json:"deploymentGroupId,omitempty"`
-	CreatedBy			string		`json:"createdBy,omitempty"`
-	HasGeoServerLayer	string		`json:"hasGetServerLayer,omitempty"`
-}
+	type dataStruct struct{
+		DeploymentGroupID	string		`json:"deploymentGroupId,omitempty"`
+		CreatedBy			string		`json:"createdBy,omitempty"`
+		HasGeoServerLayer	string		`json:"hasGetServerLayer,omitempty"`
+	}
 
-var respObj struct{
-	Type				string		`json:"type,omitempty"`
-	Data				dataStruct	`json:"data,omitempty"`
-}
+	var respObj struct{
+		Type				string		`json:"type,omitempty"`
+		Data				dataStruct	`json:"data,omitempty"`
+	}
 
-_, err := RequestKnownJSON("POST", "", pzAddr + "/deployment/group", authKey, &respObj, client)
+	_, err := RequestKnownJSON("POST", "", pzAddr + "/deployment/group", authKey, &respObj, client)
 
-return respObj.Data.DeploymentGroupID, err
+	return respObj.Data.DeploymentGroupID, addRef(err)
 }
