@@ -28,7 +28,7 @@ import (
 // RequestKnownJSON submits an http request where the response is assumed to be JSON
 // for which the format is known.  Given an object of the appropriate format for
 // said response JSON, an address to call and an authKey to send, it will submit
-// the get request, demarshal the result into the given object, and return. It
+// the get request, unmarshal the result into the given object, and return. It
 // returns the response buffer, in case it is needed for debugging purposes.
 func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interface{}, client *http.Client) ([]byte, error) {
 
@@ -36,8 +36,9 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 	if resp != nil {
 		defer resp.Body.Close()
 	}
-	if err != nil {	
-		return nil, addRef(err)
+	if err != nil {
+		errByt, _ := ioutil.ReadAll(resp.Body)
+		return errByt, addRef(err)
 	}
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
