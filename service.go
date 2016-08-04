@@ -95,17 +95,20 @@ type ExecIn struct {
 	Client		*http.Client
 }
 
+// ExecOut represents the output of the standard pzsvc-exec call.
+type ExecOut struct {
+	InFiles		map[string]string
+	OutFiles	map[string]string
+	ProgReturn	string
+	Errors		[]string
+}
+
 // CallPzsvcExec is a function designed to simplify calls to pzsvc-exec.
 // Fill out the inpObj properly, and it'll go through the contact process,
 // returning the OutFiles mapping (as that is generally what people are
 // interested in, one way or the other)
-func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
-	type execOut struct {
-		InFiles		map[string]string
-		OutFiles	map[string]string
-		ProgReturn	string
-		Errors		[]string
-	}
+func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error){
+
 	var formVal url.Values
 
 	formVal = make(map[string][]string)
@@ -122,7 +125,7 @@ func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
 		return nil, fmt.Errorf(`PostForm: %s`, err.Error())
 	}
 	
-	var respObj execOut
+	var respObj ExecOut
 	var respBytes []byte
 	respBytes, err = ReadBodyJSON(&respObj, resp.Body)
 	if err != nil {
@@ -130,9 +133,13 @@ func CallPzsvcExec(inpObj *ExecIn) (map[string]string, error){
 		fmt.Printf(errString)
 		return nil, errWithRef(errString)
 	}
+
+	if len(respObj.Errors) != 0 {
+		return nil, fmt.Errorf(`pzsvc-exec errors: %s`, SliceToCommaSep(respObj.Errors))
+	}
 	
 	fmt.Println("output:")
 	fmt.Println(string(respBytes))
 
-	return respObj.OutFiles, nil
+	return &respObj, nil
 }
