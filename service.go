@@ -19,6 +19,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+)
+
+var (
+	domain = os.Getenv("DOMAIN")
 )
 
 // FindMySvc Searches Pz for a service matching the input information.  If it finds
@@ -47,9 +52,9 @@ func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, er
 // every time your service starts up.  For those of you code-reading, the filter is
 // still somewhat rudimentary.  It will improve as better tools become available.
 func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey string,
-						attributes map[string]string,
-						client *http.Client) error {
-	
+	attributes map[string]string,
+	client *http.Client) error {
+
 	fmt.Println("Finding")
 	svcID, err := FindMySvc(svcName, pzAddr, authKey, client)
 	if err != nil {
@@ -57,15 +62,15 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 	}
 
 	svcClass := ClassType{"UNCLASSIFIED"} // TODO: this will have to be updated at some point.
-	metaObj := ResMeta{	Name:svcName,
-						Description:svcDesc,
-						ClassType:svcClass,
-						Version:svcVers,
-						Metadata: make(map[string]string) }
+	metaObj := ResMeta{Name: svcName,
+		Description: svcDesc,
+		ClassType:   svcClass,
+		Version:     svcVers,
+		Metadata:    make(map[string]string)}
 	for key, val := range attributes {
 		metaObj.Metadata[key] = val
 	}
-	svcObj := Service{ ServiceID:svcID, URL:svcURL, Method:"POST", ResMeta:metaObj }
+	svcObj := Service{ServiceID: svcID, URL: svcURL, Method: "POST", ResMeta: metaObj}
 	svcJSON, err := json.Marshal(svcObj)
 
 	if svcID == "" {
@@ -85,29 +90,29 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 // ExecIn is a structure designed to contain all of the information necessary
 // to call pzsvc-exec.
 type ExecIn struct {
-	FuncStr		string
-	InFiles		[]string
-	OutGeoJSON	[]string
-	OutGeoTIFF	[]string
-	OutTxt		[]string
-	AlgoURL		string
-	AuthKey		string
-	Client		*http.Client
+	FuncStr    string
+	InFiles    []string
+	OutGeoJSON []string
+	OutGeoTIFF []string
+	OutTxt     []string
+	AlgoURL    string
+	AuthKey    string
+	Client     *http.Client
 }
 
 // ExecOut represents the output of the standard pzsvc-exec call.
 type ExecOut struct {
-	InFiles		map[string]string
-	OutFiles	map[string]string
-	ProgReturn	string
-	Errors		[]string
+	InFiles    map[string]string
+	OutFiles   map[string]string
+	ProgReturn string
+	Errors     []string
 }
 
 // CallPzsvcExec is a function designed to simplify calls to pzsvc-exec.
 // Fill out the inpObj properly, and it'll go through the contact process,
 // returning the OutFiles mapping (as that is generally what people are
 // interested in, one way or the other)
-func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error){
+func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error) {
 
 	var formVal url.Values
 
@@ -124,7 +129,7 @@ func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error){
 	if err != nil {
 		return nil, fmt.Errorf(`PostForm: %s`, err.Error())
 	}
-	
+
 	var respObj ExecOut
 	var respBytes []byte
 	respBytes, err = ReadBodyJSON(&respObj, resp.Body)
@@ -137,7 +142,7 @@ func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error){
 	if len(respObj.Errors) != 0 {
 		return nil, fmt.Errorf(`pzsvc-exec errors: %s`, SliceToCommaSep(respObj.Errors))
 	}
-	
+
 	fmt.Println("output:")
 	fmt.Println(string(respBytes))
 
