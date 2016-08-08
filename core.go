@@ -16,7 +16,6 @@ package pzsvc
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -190,18 +189,4 @@ func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 
 	err = json.Unmarshal(rBytes, output)
 	return rBytes, addRef(err)
-}
-
-var httpClient *http.Client
-
-// HTTPClient is a factory method for a http.Client suitable for common operations
-func HTTPClient() *http.Client {
-	if httpClient == nil {
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-
-		httpClient = &http.Client{Transport: transport}
-	}
-	return httpClient
 }
