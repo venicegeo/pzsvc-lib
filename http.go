@@ -21,8 +21,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/venicegeo/pz-gocommon/gocommon"
+)
+
+var (
+	domain = os.Getenv("DOMAIN")
 )
 
 // HTTPError represents any HTTP error
