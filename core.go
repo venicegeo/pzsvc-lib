@@ -16,6 +16,7 @@ package pzsvc
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,7 +44,6 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
 
-
 // SubmitMultipart sends a multi-part POST call, including an optional uploaded file,
 // and returns the response.  Primarily intended to support Ingest calls.
 func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte, client *http.Client) (*http.Response, error) {
@@ -57,11 +57,12 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 	}
 
 	if fileData != nil {
-		part, err := writer.CreateFormFile("file", filename)
+		var part io.Writer
+		part, err = writer.CreateFormFile("file", filename)
 		if err != nil {
 			return nil, addRef(err)
 		}
-		if (part == nil) {
+		if part == nil {
 			return nil, errWithRef("Failure in Form File Creation.")
 		}
 
@@ -113,7 +114,7 @@ func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client)
 			return nil, addRef(err)
 		}
 	}
-	
+
 	fileReq.Header.Add("Authorization", authKey)
 
 	resp, err := client.Do(fileReq)
@@ -125,7 +126,7 @@ func SubmitSinglePart(method, bodyStr, url, authKey string, client *http.Client)
 }
 
 // GetJobResponse will repeatedly poll the job status on the given job Id
-// until job completion, then acquires and returns the DataResult.  
+// until job completion, then acquires and returns the DataResult.
 func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataResult, error) {
 
 	if jobID == "" {
@@ -134,18 +135,20 @@ func GetJobResponse(jobID, pzAddr, authKey string, client *http.Client) (*DataRe
 
 	for i := 0; i < 180; i++ { // will wait up to 3 minutes
 
-		var outpObj struct { Data JobStatusResp `json:"data,omitempty"` }
-		respBuf, err := RequestKnownJSON("GET", "", pzAddr + "/job/" + jobID, authKey, &outpObj, client)
+		var outpObj struct {
+			Data JobStatusResp `json:"data,omitempty"`
+		}
+		respBuf, err := RequestKnownJSON("GET", "", pzAddr+"/job/"+jobID, authKey, &outpObj, client)
 		if err != nil {
 			return nil, addRef(err)
 		}
 
 		respObj := &outpObj.Data
-		if	respObj.Status == "Submitted" ||
+		if respObj.Status == "Submitted" ||
 			respObj.Status == "Running" ||
 			respObj.Status == "Pending" ||
-			( respObj.Status == "Success" && respObj.Result == nil ) ||
-			( respObj.Status == "Error" && respObj.Result.Message == "Job Not Found." )  {
+			(respObj.Status == "Success" && respObj.Result == nil) ||
+			(respObj.Status == "Error" && respObj.Result.Message == "Job Not Found.") {
 			time.Sleep(time.Second)
 		} else {
 			if respObj.Status == "Success" {
@@ -183,8 +186,22 @@ func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	rBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return nil, addRef(err)
-	}	
+	}
 
-	err = json.Unmarshal(rBytes, output)	
+	err = json.Unmarshal(rBytes, output)
 	return rBytes, addRef(err)
+}
+
+var httpClient *http.Client
+
+// HTTPClient is a factory method for a http.Client suitable for common operations
+func HTTPClient() *http.Client {
+	if httpClient == nil {
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		httpClient = &http.Client{Transport: transport}
+	}
+	return httpClient
 }
