@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/venicegeo/pz-gocommon/elasticsearch"
 	"github.com/venicegeo/pz-gocommon/gocommon"
@@ -192,4 +193,24 @@ func Events(eventTypeID piazza.Ident, auth string) ([]workflow.Event, error) {
 	log.Print(eventsBytes)
 	err = json.Unmarshal(eventsBytes, result)
 	return result, err
+}
+
+// GetAlerts will return the group of alerts associated with the given trigger ID,
+// under the given pagination. 
+func GetAlerts (perPage, pageNo int, trigID, pzAddr, pzAuth string) ([]Alert, error) {
+
+	qParams := "triggerId=" + trigID + "&sortBy=createdOn&order=desc"
+	if perPage != 0 {
+		qParams += "&perPage=" + strconv.Itoa(perPage)
+	}
+	if pageNo != 0 {
+		qParams += "&page=" + strconv.Itoa(pageNo)
+	}
+
+	var outpObj AlertList
+
+	if _, err := RequestKnownJSON("GET", "", pzAddr + "/alert?" + qParams, pzAuth, &outpObj, &http.Client{}); err != nil {
+		return nil, fmt.Errorf("Error: pzsvc.RequestKnownJSON: fail on alert check: " + err.Error())
+	}
+	return outpObj.Data, nil
 }

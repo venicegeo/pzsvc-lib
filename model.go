@@ -18,10 +18,10 @@ package pzsvc
 // or data block.  It is an important part of ingest requests, and the
 // core of the response object for file metadata requests.
 type DataDesc struct {
-		DataID		string		`json:"dataId,omitempty"`
-		DataType	DataType	`json:"dataType,omitempty"`
-		ResMeta		ResMeta		`json:"metadata,omitempty"`
-		SpatMeta	*SpatMeta	`json:"spatialMetadata,omitempty"`
+	DataID			string		`json:"dataId,omitempty"`
+	DataType		DataType	`json:"dataType,omitempty"`
+	ResMeta			ResMeta		`json:"metadata,omitempty"`
+	SpatMeta		*SpatMeta	`json:"spatialMetadata,omitempty"`
 }
 
 // DataType is highly polymorphic, and refers to a specific block of data.
@@ -123,11 +123,11 @@ type TxtKeyVal struct {
 // PagStruct is the Pz pagination data format.  It is attached
 // to all list-type structs.
 type PagStruct struct {
-	Count		int			`json:"count,omitempty"`
-	Order		string		`json:"order,omitempty"`
-	Page		int			`json:"page,omitempty"`
-	PerPage		int			`json:"perPage,omitempty"`
-	SortBy		string		`json:"sortBy,omitempty"`
+	Count			int			`json:"count,omitempty"`
+	Order			string		`json:"order,omitempty"`
+	Page			int			`json:"page,omitempty"`
+	PerPage			int			`json:"perPage,omitempty"`
+	SortBy			string		`json:"sortBy,omitempty"`
 }
 
 /***********************/
@@ -152,9 +152,7 @@ type IngestReq struct {
 	Data			DataDesc	`json:"data,omitempty"`
 	Host			bool		`json:"host,omitempty"`
 	Type			string		`json:"type,omitempty"`	// "ingest"
-
 }
-
 
 // ResMeta holds a resource medatadata. It's used broadly
 // Worth noting that Pz pays no attention to the contents of the
@@ -191,9 +189,9 @@ type ResMeta struct {
 // SvcList is the Pz representation of a list of service objects.
 // It's the response object for a list/search services call
 type SvcList struct {
-	Type		string		`json:"type,omitempty"`
-	Data		[]Service	`json:"data,omitempty"`
-	Pagination	PagStruct	`json:"pagination,omitempty"`
+	Type			string		`json:"type,omitempty"`
+	Data			[]Service	`json:"data,omitempty"`
+	Pagination		PagStruct	`json:"pagination,omitempty"`
 }
 
 // JobStatusResp is the response object to a Get Job Status call.
@@ -214,4 +212,44 @@ type JobInitResp struct {
 	Data		struct {
 		JobID		string		`json:"jobId,omitempty"`
 	}							`json:"data,omitempty"`
+}
+
+// Alert is the response object to a Get Alert call when given
+// an alertID.  It is also used to represent alerts in the search
+// and list alerts calls
+type Alert struct {
+	AlertID			string		`json:"alertId,omitempty"`
+	CreatedBy		string		`json:"createdBy,omitempty"`
+	EventID			string		`json:"eventId,omitempty"`
+	JobID			string		`json:"jobId,omitempty"`
+	TriggerID		string		`json:"triggerId,omitempty"`
+}
+
+// AlertList is the representation of a list of alert objects.
+type AlertList struct {
+	Type			string		`json:"type,omitempty"`
+	Data			[]Alert		`json:"data,omitempty"`
+	Pagination		PagStruct	`json:"pagination,omitempty"`
+}
+
+// Trigger is the response object to a Get Trigger call when given
+// a triggerID.  It is also used to represent triggers in the list
+// and search trigger calls.  Additionally, it is used when creating
+// or modifying a trigger.  Due to the complexity of the Trigger
+// object, many of its component parts ahve been defined in a
+// separate file.  Please see elasticSearchModel.go for those.
+type Trigger struct {
+    Name            string	        `json:"name"`
+    Enabled         bool			`json:"enabled"`
+    Condition       TrigCondition	`json:"condition"`
+    Job             TrigJob			`json:"job"`
+    CreatedBy       string			`json:"createdBy,omitempty"`
+    CreatedOn       string			`json:"createdOn,omitempty"`
+    TriggerID       string			`json:"triggerId,omitempty"`
+}
+
+type TriggerList struct {
+	Type			string			`json:"type,omitempty"`
+	Data			[]Trigger		`json:"data,omitempty"`
+	Pagination		PagStruct		`json:"pagination,omitempty"`
 }
