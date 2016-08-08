@@ -114,7 +114,7 @@ func EventType(root string, mapping map[string]elasticsearch.MappingElementTypeN
 	return result, nil
 }
 
-// AddEventType adds the requested EventType to
+// AddEventType adds the requested EventType and returns a pointer to what was created
 func AddEventType(eventType workflow.EventType, auth string) (*workflow.EventType, error) {
 	var (
 		request        *http.Request
@@ -135,8 +135,7 @@ func AddEventType(eventType workflow.EventType, auth string) (*workflow.EventTyp
 	request.Header.Set("Authorization", auth)
 	request.Header.Set("Content-Type", "application/json")
 
-	log.Print(requestURL)
-	log.Print(eventTypeBytes)
+	log.Print(string(eventTypeBytes))
 	if response, err = HTTPClient().Do(request); err != nil {
 		return result, err
 	}
@@ -152,6 +151,7 @@ func AddEventType(eventType workflow.EventType, auth string) (*workflow.EventTyp
 	}
 
 	log.Print(eventTypeBytes)
+	result = new(workflow.EventType)
 	err = json.Unmarshal(eventTypeBytes, result)
 	return result, err
 }
@@ -167,7 +167,7 @@ func Events(eventTypeID piazza.Ident, auth string) ([]workflow.Event, error) {
 		result      []workflow.Event
 	)
 
-	requestURL := "https://pz-gateway." + domain + "/event&eventTypeId=" + string(eventTypeID)
+	requestURL := "https://pz-gateway." + domain + "/event?eventTypeId=" + string(eventTypeID)
 	if request, err = http.NewRequest("GET", requestURL, nil); err != nil {
 		return result, err
 	}
@@ -189,7 +189,55 @@ func Events(eventTypeID piazza.Ident, auth string) ([]workflow.Event, error) {
 		return result, err
 	}
 
-	log.Print(eventsBytes)
-	err = json.Unmarshal(eventsBytes, result)
+	log.Print(string(eventsBytes))
+	var jsonResponse piazza.JsonResponse
+	if err = json.Unmarshal(eventsBytes, &jsonResponse); err != nil {
+		return result, err
+	}
+	result = make([]workflow.Event, 10)
+	err = jsonResponse.ExtractData(&result)
+	return result, err
+}
+
+// AddEvent adds the requested Event and returns a pointer to what was created
+// TODO: Fix this (or prove that it works)
+func AddEvent(event workflow.Event, auth string) (*workflow.Event, error) {
+	var (
+		request    *http.Request
+		response   *http.Response
+		err        error
+		eventBytes []byte
+		result     *workflow.Event
+	)
+	if eventBytes, err = json.Marshal(&event); err != nil {
+		return result, err
+	}
+
+	requestURL := "https://pz-gateway." + domain + "/event"
+	if request, err = http.NewRequest("POST", requestURL, bytes.NewBuffer(eventBytes)); err != nil {
+		return result, err
+	}
+
+	request.Header.Set("Authorization", auth)
+	request.Header.Set("Content-Type", "application/json")
+
+	log.Print(string(eventBytes))
+	if response, err = HTTPClient().Do(request); err != nil {
+		return result, err
+	}
+
+	// Check for HTTP errors
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		return result, &HTTPError{Status: response.StatusCode, Message: "Failed to add requested event: " + response.Status}
+	}
+
+	defer response.Body.Close()
+	if eventBytes, err = ioutil.ReadAll(response.Body); err != nil {
+		return result, err
+	}
+
+	log.Print(string(eventBytes))
+	result = new(workflow.Event)
+	err = json.Unmarshal(eventBytes, result)
 	return result, err
 }
