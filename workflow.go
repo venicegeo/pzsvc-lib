@@ -114,7 +114,6 @@ func Events(eventTypeID piazza.Ident, auth string) ([]workflow.Event, error) {
 }
 
 // AddEvent adds the requested Event and returns a pointer to what was created
-// TODO: Fix this (or prove that it works)
 func AddEvent(event workflow.Event, auth string) (*workflow.Event, error) {
 	var (
 		err        error
@@ -128,7 +127,6 @@ func AddEvent(event workflow.Event, auth string) (*workflow.Event, error) {
 	if eventBytes, err = PostGateway("/event", eventBytes, auth); err != nil {
 		return result, err
 	}
-	log.Print(string(eventBytes))
 	result = new(workflow.Event)
 	err = json.Unmarshal(eventBytes, result)
 	return result, err
