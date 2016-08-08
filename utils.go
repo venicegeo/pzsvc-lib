@@ -16,25 +16,26 @@ package pzsvc
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"strconv"
 )
 
 func addRef(err error) error {
-	if (err != nil) {
+	if err != nil {
 		_, file, line, ok := runtime.Caller(1)
 		if ok == true {
-			return errors.New( `(` + file + `, ` + strconv.Itoa(line) + `): ` + err.Error())
+			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + err.Error())
 		}
 	}
 	return err
 }
 
 func errWithRef(errStr string) error {
-	if (errStr != "") {
+	if errStr != "" {
 		_, file, line, ok := runtime.Caller(1)
 		if ok == true {
-			return errors.New( `(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr)
+			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr)
 		}
 	}
 	return errors.New(errStr)
@@ -44,7 +45,7 @@ func errWithRef(errStr string) error {
 // list of strings, suitable for JSON.
 func SliceToCommaSep(inSlice []string) string {
 	sliLen := len(inSlice)
-	if (sliLen == 0){
+	if sliLen == 0 {
 		return ""
 	}
 	accum := inSlice[0]
@@ -52,4 +53,14 @@ func SliceToCommaSep(inSlice []string) string {
 		accum = accum + "," + inSlice[i]
 	}
 	return accum
+}
+
+// HTTPError represents any HTTP error
+type HTTPError struct {
+	Status  int
+	Message string
+}
+
+func (err HTTPError) Error() string {
+	return fmt.Sprintf("%d: %v", err.Status, err.Message)
 }
