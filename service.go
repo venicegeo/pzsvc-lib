@@ -19,11 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
-)
-
-var (
-	domain = os.Getenv("DOMAIN")
 )
 
 // FindMySvc Searches Pz for a service matching the input information.  If it finds

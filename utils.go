@@ -16,7 +16,6 @@ package pzsvc
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"strconv"
 )
@@ -53,14 +52,4 @@ func SliceToCommaSep(inSlice []string) string {
 		accum = accum + "," + inSlice[i]
 	}
 	return accum
-}
-
-// HTTPError represents any HTTP error
-type HTTPError struct {
-	Status  int
-	Message string
-}
-
-func (err HTTPError) Error() string {
-	return fmt.Sprintf("%d: %v", err.Status, err.Message)
 }
