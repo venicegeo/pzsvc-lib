@@ -91,7 +91,6 @@ type ExecIn struct {
 	OutTxt     []string
 	AlgoURL    string
 	AuthKey    string
-	Client     *http.Client
 }
 
 // ExecOut represents the output of the standard pzsvc-exec call.
