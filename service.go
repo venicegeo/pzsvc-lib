@@ -24,10 +24,10 @@ import (
 // FindMySvc Searches Pz for a service matching the input information.  If it finds
 // one, it returns the service ID.  If it does not, returns an empty string.  Currently
 // searches on service name and submitting user.
-func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, error) {
+func FindMySvc(svcName, pzAddr, authKey string) (string, error) {
 	query := pzAddr + "/service/me?per_page=1000&keyword=" + url.QueryEscape(svcName)
 	var respObj SvcList
-	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj, client)
+	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj)
 	if err != nil {
 		return "", addRef(err)
 	}
@@ -47,11 +47,10 @@ func FindMySvc(svcName, pzAddr, authKey string, client *http.Client) (string, er
 // every time your service starts up.  For those of you code-reading, the filter is
 // still somewhat rudimentary.  It will improve as better tools become available.
 func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey string,
-	attributes map[string]string,
-	client *http.Client) error {
+	attributes map[string]string) error {
 
 	fmt.Println("Finding")
-	svcID, err := FindMySvc(svcName, pzAddr, authKey, client)
+	svcID, err := FindMySvc(svcName, pzAddr, authKey)
 	if err != nil {
 		return addRef(err)
 	}
@@ -70,10 +69,10 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 
 	if svcID == "" {
 		fmt.Println("Registering")
-		_, err = SubmitSinglePart("POST", string(svcJSON), pzAddr+"/service", authKey, client)
+		_, err = SubmitSinglePart("POST", string(svcJSON), pzAddr+"/service", authKey)
 	} else {
 		fmt.Println("Updating")
-		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey, client)
+		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey)
 	}
 	if err != nil {
 		return addRef(err)

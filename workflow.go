@@ -147,7 +147,7 @@ func GetAlerts (perPage, pageNo int, trigID, pzAddr, pzAuth string) ([]Alert, er
 
 	var outpObj AlertList
 
-	if _, err := RequestKnownJSON("GET", "", pzAddr + "/alert?" + qParams, pzAuth, &outpObj, &http.Client{}); err != nil {
+	if _, err := RequestKnownJSON("GET", "", pzAddr + "/alert?" + qParams, pzAuth, &outpObj); err != nil {
 		return nil, fmt.Errorf("Error: pzsvc.RequestKnownJSON: fail on alert check: " + err.Error())
 	}
 	return outpObj.Data, nil

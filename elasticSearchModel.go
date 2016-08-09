@@ -60,13 +60,3 @@ type TrigCondition struct{
                 Query   TrigQuery       `json:"query"`
             }                           `json:"query"`
 }
-
-type TrigStruct struct {
-    Name            string	        `json:"name"`
-    Enabled         bool            `json:"enabled"`
-    Condition       TrigCondition   `json:"condition"`
-    Job             TrigJob         `json:"job"`
-    CreatedBy       string          `json:"createdBy,omitempty"`
-    CreatedOn       string          `json:"createdOn,omitempty"`
-    TriggerID       string          `json:"triggerId,omitempty"`
-}
