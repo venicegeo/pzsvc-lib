@@ -16,6 +16,7 @@ package pzsvc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -36,10 +37,11 @@ func GetEventType(root string, mapping map[string]string, auth string) (EventTyp
 		ok             bool
 		foundDeepMatch bool
 		foundMatch     bool
+		bytes          []byte
 	)
 	if result, ok = eventTypeMap[root]; !ok {
-		if _, err = RequestKnownJSON("GET", "", Gateway()+"/eventType?perPage=10000", auth, eventTypes); err != nil {
-			return result, err
+		if bytes, err = RequestKnownJSON("GET", "", Gateway()+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
+			return result, errors.New(err.Error() + "\n" + string(bytes))
 		}
 
 		// Look for an event type with the same root and same mapping
@@ -52,10 +54,10 @@ func GetEventType(root string, mapping map[string]string, auth string) (EventTyp
 					foundMatch = true
 					if reflect.DeepEqual(eventType.Mapping, mapping) {
 						foundDeepMatch = true
-						log.Printf("Found match for %v", eventTypeName)
+						log.Printf("Found deep match for %v", eventTypeName)
 						result = eventType
-						break
 					}
+					break
 				}
 			}
 			if foundDeepMatch {
@@ -91,7 +93,9 @@ func AddEventType(eventType EventType, auth string) (EventType, error) {
 		return result, err
 	}
 
-	_, err = RequestKnownJSON("POST", string(eventTypeBytes), Gateway()+"/eventType", auth, result)
+	if eventTypeBytes, err = RequestKnownJSON("POST", string(eventTypeBytes), Gateway()+"/eventType", auth, &result); err != nil {
+		err = errors.New(err.Error() + "\n" + string(eventTypeBytes))
+	}
 
 	return result, err
 }
@@ -104,7 +108,7 @@ func Events(eventTypeID string, auth string) ([]Event, error) {
 		eventList EventList
 	)
 
-	_, err = RequestKnownJSON("GET", "", Gateway()+"/event?eventTypeId="+string(eventTypeID), auth, eventList)
+	_, err = RequestKnownJSON("GET", "", Gateway()+"/event?eventTypeId="+string(eventTypeID), auth, &eventList)
 
 	return eventList.Data, err
 }
@@ -120,7 +124,7 @@ func AddEvent(event Event, auth string) (Event, error) {
 		return result, err
 	}
 
-	_, err = RequestKnownJSON("POST", string(eventBytes), Gateway()+"/event", auth, result)
+	_, err = RequestKnownJSON("POST", string(eventBytes), Gateway()+"/event", auth, &result)
 
 	return result, err
 }
