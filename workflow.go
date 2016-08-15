@@ -16,55 +16,57 @@ package pzsvc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
-
-	"github.com/venicegeo/pz-gocommon/elasticsearch"
-	"github.com/venicegeo/pz-gocommon/gocommon"
-	"github.com/venicegeo/pz-workflow/workflow"
 )
 
 var (
-	eventTypeMap = make(map[string]*workflow.EventType)
+	eventTypeMap = make(map[string]EventType)
 )
 
-// EventType returns the event type ID and fully qualified name
+// GetEventType returns the event type ID and fully qualified name
 // for the specified EventType and its root
-func EventType(root string, mapping map[string]elasticsearch.MappingElementTypeName, auth string) (*workflow.EventType, error) {
+func GetEventType(root string, mapping map[string]string, auth string) (EventType, error) {
 	var (
-		err        error
-		eventTypes []workflow.EventType
-		result     *workflow.EventType
-		ok         bool
+		err            error
+		eventTypes     EventTypeList
+		result         EventType
+		ok             bool
+		foundDeepMatch bool
+		foundMatch     bool
+		bytes          []byte
 	)
 	if result, ok = eventTypeMap[root]; !ok {
-		if err = GetGateway("/eventType?perPage=10000", auth, &eventTypes); err != nil {
-			return result, err
+		if bytes, err = RequestKnownJSON("GET", "", Gateway()+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
+			return result, errors.New(err.Error() + "\n" + string(bytes))
 		}
 
 		// Look for an event type with the same root and same mapping
 		// and add the EventType if needed
 		for version := 0; ; version++ {
-			foundMatch := false
+			foundMatch = false
 			eventTypeName := fmt.Sprintf("%v:%v", root, version)
-			for _, eventType := range eventTypes {
+			for _, eventType := range eventTypes.Data {
 				if eventType.Name == eventTypeName {
 					foundMatch = true
 					if reflect.DeepEqual(eventType.Mapping, mapping) {
-						log.Printf("Found match for %v", eventTypeName)
-						result = &eventType
-						break
+						foundDeepMatch = true
+						log.Printf("Found deep match for %v", eventTypeName)
+						result = eventType
 					}
+					break
 				}
 			}
-			if result != nil {
+			if foundDeepMatch {
 				break
 			}
 			if !foundMatch {
 				log.Printf("Found no match for %v; adding.", eventTypeName)
-				eventType := workflow.EventType{Name: eventTypeName, Mapping: mapping}
+				eventType := EventType{Name: eventTypeName, Mapping: mapping}
 				if result, err = AddEventType(eventType, auth); err == nil {
+					foundDeepMatch = true
 					break
 				} else {
 					return result, err
@@ -72,63 +74,57 @@ func EventType(root string, mapping map[string]elasticsearch.MappingElementTypeN
 			}
 		}
 
-		if result != nil {
+		if foundDeepMatch {
 			eventTypeMap[root] = result
 		}
 	}
-	return result, nil
+	return result, err
 }
 
 // AddEventType adds the requested EventType and returns a pointer to what was created
-func AddEventType(eventType workflow.EventType, auth string) (*workflow.EventType, error) {
+func AddEventType(eventType EventType, auth string) (EventType, error) {
 	var (
 		err            error
 		eventTypeBytes []byte
-		result         *workflow.EventType
+		result         EventType
 	)
 	if eventTypeBytes, err = json.Marshal(&eventType); err != nil {
 		return result, err
 	}
 
-	if eventTypeBytes, err = PostGateway("/eventType", eventTypeBytes, auth); err != nil {
-		return result, err
+	if eventTypeBytes, err = RequestKnownJSON("POST", string(eventTypeBytes), Gateway()+"/eventType", auth, &result); err != nil {
+		err = errors.New(err.Error() + "\n" + string(eventTypeBytes))
 	}
 
-	log.Print(eventTypeBytes)
-	result = new(workflow.EventType)
-	err = json.Unmarshal(eventTypeBytes, result)
 	return result, err
 }
 
 // Events returns the events for the event type ID provided
-func Events(eventTypeID piazza.Ident, auth string) ([]workflow.Event, error) {
+func Events(eventTypeID string, auth string) ([]Event, error) {
 
 	var (
-		err    error
-		result []workflow.Event
+		err       error
+		eventList EventList
 	)
 
-	err = GetGateway("/event?eventTypeId="+string(eventTypeID), auth, &result)
+	_, err = RequestKnownJSON("GET", "", Gateway()+"/event?eventTypeId="+string(eventTypeID), auth, &eventList)
 
-	return result, err
+	return eventList.Data, err
 }
 
-// AddEvent adds the requested Event and returns a pointer to what was created
-func AddEvent(event workflow.Event, auth string) (*workflow.Event, error) {
+// AddEvent adds the requested Event and returns what was created
+func AddEvent(event Event, auth string) (Event, error) {
 	var (
 		err        error
 		eventBytes []byte
-		result     *workflow.Event
+		result     Event
 	)
 	if eventBytes, err = json.Marshal(&event); err != nil {
 		return result, err
 	}
 
-	if eventBytes, err = PostGateway("/event", eventBytes, auth); err != nil {
-		return result, err
-	}
-	result = new(workflow.Event)
-	err = json.Unmarshal(eventBytes, result)
+	_, err = RequestKnownJSON("POST", string(eventBytes), Gateway()+"/event", auth, &result)
+
 	return result, err
 }
 

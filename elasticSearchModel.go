@@ -14,7 +14,6 @@
 
 package pzsvc
 
-
 /*
 This is merely the beginning of an attempt to lay out the elasticsearch grammar
 in go structs.  The overall objective is to enable better JSON marshaling and
@@ -24,39 +23,51 @@ for polymorphism hurts here, given how enthusiastically polymorphic both the
 elasticsearch grammar and the piazza backend are in some places
 */
 
-type JobData struct{
-    ServiceID       string                      `json:"serviceId,omitempty"`
-    DataInputs      map[string]DataType         `json:"dataInputs,omitempty"`
-    DataOutput      []DataType                  `json:"dataOutput,omitempty"`
+// Elastic Search constants
+const (
+	MappingElementTypeString = "string"
+	MappingElementTypeLong   = "long"
+)
+
+// JobData ...
+type JobData struct {
+	ServiceID  string              `json:"serviceId,omitempty"`
+	DataInputs map[string]DataType `json:"dataInputs,omitempty"`
+	DataOutput []DataType          `json:"dataOutput,omitempty"`
 }
 
-type TrigJob struct{
-    JobType     struct{
-        Type    string      `json:"type,omitempty"`
-        Data    JobData     `json:"data,omitempty"`
-    }                       `json:"jobType,omitempty"`
+// TrigJob ...
+type TrigJob struct {
+	JobType struct {
+		Type string  `json:"type,omitempty"`
+		Data JobData `json:"data,omitempty"`
+	} `json:"jobType,omitempty"`
 }
 
+// CompClause ...
 type CompClause struct {
-    LTE     interface{}     `json:"lte,omitempty"`
-    GTE     interface{}     `json:"gte,omitempty"`
-    Format  string          `json:"format,omitempty"`
+	LTE    interface{} `json:"lte,omitempty"`
+	GTE    interface{} `json:"gte,omitempty"`
+	Format string      `json:"format,omitempty"`
 }
 
+// QueryClause ...
 type QueryClause struct {
-    Match   map[string]string       `json:"match,omitempty"`
-    Range   map[string]CompClause   `json:"range,omitempty"`
+	Match map[string]string     `json:"match,omitempty"`
+	Range map[string]CompClause `json:"range,omitempty"`
 }
 
-type TrigQuery struct{
-    Bool    struct{
-        Filter  []QueryClause   `json:"filter"`
-    }                           `json:"bool"`
+// TrigQuery ...
+type TrigQuery struct {
+	Bool struct {
+		Filter []QueryClause `json:"filter"`
+	} `json:"bool"`
 }
 
-type TrigCondition struct{
-    EventTypeIDs        []string        `json:"eventTypeIds"`
-    Query   struct{
-                Query   TrigQuery       `json:"query"`
-            }                           `json:"query"`
+// TrigCondition ...
+type TrigCondition struct {
+	EventTypeIDs []string `json:"eventTypeIds"`
+	Query        struct {
+		Query TrigQuery `json:"query"`
+	} `json:"query"`
 }
