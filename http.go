@@ -15,7 +15,6 @@
 package pzsvc
 
 import (
-
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -59,11 +58,10 @@ func HTTPClient() *http.Client {
 }
 
 // SetHTTPClient is used to set the current http client.  This is mostly useful
-// for testing purposes 
+// for testing purposes
 func SetHTTPClient(newClient *http.Client) {
 	httpClient = newClient
 }
-
 
 // RequestKnownJSON submits an http request where the response is assumed to be JSON
 // for which the format is known.  Given an object of the appropriate format for
@@ -228,7 +226,6 @@ func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	if err != nil {
 		return nil, addRef(err)
 	}
-
 	err = json.Unmarshal(rBytes, output)
 	return rBytes, addRef(err)
 }

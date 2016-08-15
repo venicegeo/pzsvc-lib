@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
 
 	"github.com/venicegeo/pz-gocommon/elasticsearch"
 	"github.com/venicegeo/pz-gocommon/gocommon"
@@ -134,20 +133,20 @@ func AddEvent(event workflow.Event, auth string) (*workflow.Event, error) {
 }
 
 // GetAlerts will return the group of alerts associated with the given trigger ID,
-// under the given pagination. 
-func GetAlerts (perPage, pageNo int, trigID, pzAddr, pzAuth string) ([]Alert, error) {
+// under the given pagination.
+func GetAlerts(perPage, pageNo, trigID, pzAddr, pzAuth string) ([]Alert, error) {
 
 	qParams := "triggerId=" + trigID + "&sortBy=createdOn&order=desc"
-	if perPage != 0 {
-		qParams += "&perPage=" + strconv.Itoa(perPage)
+	if perPage != "" {
+		qParams += "&perPage=" + perPage
 	}
-	if pageNo != 0 {
-		qParams += "&page=" + strconv.Itoa(pageNo)
+	if pageNo != "" {
+		qParams += "&page=" + pageNo
 	}
 
 	var outpObj AlertList
 
-	if _, err := RequestKnownJSON("GET", "", pzAddr + "/alert?" + qParams, pzAuth, &outpObj); err != nil {
+	if _, err := RequestKnownJSON("GET", "", pzAddr+"/alert?"+qParams, pzAuth, &outpObj); err != nil {
 		return nil, fmt.Errorf("Error: pzsvc.RequestKnownJSON: fail on alert check: " + err.Error())
 	}
 	return outpObj.Data, nil
