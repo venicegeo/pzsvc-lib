@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
 )
 
 var (
@@ -131,14 +130,14 @@ func AddEvent(event Event, auth string) (Event, error) {
 
 // GetAlerts will return the group of alerts associated with the given trigger ID,
 // under the given pagination.
-func GetAlerts(perPage, pageNo int, trigID, pzAddr, pzAuth string) ([]Alert, error) {
+func GetAlerts(perPage, pageNo, trigID, pzAddr, pzAuth string) ([]Alert, error) {
 
 	qParams := "triggerId=" + trigID + "&sortBy=createdOn&order=desc"
-	if perPage != 0 {
-		qParams += "&perPage=" + strconv.Itoa(perPage)
+	if perPage != "" {
+		qParams += "&perPage=" + perPage
 	}
-	if pageNo != 0 {
-		qParams += "&page=" + strconv.Itoa(pageNo)
+	if pageNo != "" {
+		qParams += "&page=" + pageNo
 	}
 
 	var outpObj AlertList

@@ -238,7 +238,6 @@ func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	if err != nil {
 		return nil, addRef(err)
 	}
-
 	err = json.Unmarshal(rBytes, output)
 	return rBytes, addRef(err)
 }
