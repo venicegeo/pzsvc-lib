@@ -27,6 +27,15 @@ import (
 	"time"
 )
 
+// These can go away when we move to Go 1.6
+const (
+	MethodOptions = "OPTIONS"
+	MethodGet     = "GET"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethdoDelete  = "DELETE"
+)
+
 var (
 	domain = os.Getenv("DOMAIN")
 )
