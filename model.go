@@ -289,3 +289,11 @@ type EventList struct {
 	Data       []Event   `json:"data,omitempty"`
 	Pagination PagStruct `json:"pagination,omitempty"`
 }
+
+// FileDataList is a list of DataDesc objects.  It is the response object
+// when searching for lists of file metadata, using the /data endpoint
+type FileDataList struct {
+	Type       string     `json:"type,omitempty"`
+	Data       []DataDesc `json:"data,omitempty"`
+	Pagination PagStruct  `json:"pagination,omitempty"`
+}

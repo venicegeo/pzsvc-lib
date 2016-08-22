@@ -26,18 +26,18 @@ import (
 
 // locString simplifies certain local processes that wish to interact with
 // files that may or may not be in a subfolder.
-func locString(subFold, fname string ) string {
+func locString(subFold, fname string) string {
 	if subFold == "" {
 		return fmt.Sprintf(`./%s`, fname)
 	}
-	return fmt.Sprintf(`./%s/%s`, subFold, fname)	
+	return fmt.Sprintf(`./%s/%s`, subFold, fname)
 }
 
 // DownloadBytes retrieves a file from Pz using the file access API and then
 // returns the results as a byte slice
 func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 
-	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey)
+	resp, err := SubmitSinglePart("GET", "", pzAddr+"/file/"+dataID, authKey)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -56,7 +56,7 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 // Download retrieves a file from Pz using the file access API
 func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 
-	resp, err := SubmitSinglePart("GET", "", pzAddr + "/file/" + dataID, authKey)
+	resp, err := SubmitSinglePart("GET", "", pzAddr+"/file/"+dataID, authKey)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -70,10 +70,10 @@ func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 	if filename == "" {
 		b := make([]byte, 100)
 		resp.Body.Read(b)
-		
+
 		return "", errWithRef(`File for DataID ` + dataID + ` unnamed.  Probable ingest error.  Initial response characters: ` + string(b))
 	}
-	
+
 	out, err := os.Create(locString(subFold, filename))
 	if err != nil {
 		return "", addRef(err)
@@ -85,39 +85,42 @@ func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 	return filename, nil
 }
 
-// Ingest ingests the given bytes to Piazza.  
+// Ingest ingests the given bytes to Piazza.
 func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
-			ingData []byte,
-			props map[string]string) (string, error) {
+	ingData []byte,
+	props map[string]string) (string, error) {
 
 	var fileData []byte
 	var resp *http.Response
 
 	desc := fmt.Sprintf("%s uploaded by %s.", fType, sourceName)
 	rMeta := ResMeta{
-				Name:fName,
-				Format:fType,
-				ClassType:ClassType{"UNCLASSIFIED"},
-				Version: version,
-				Description:desc,
-				Metadata: make(map[string]string) }
-		
+		Name:        fName,
+		Format:      fType,
+		ClassType:   ClassType{"UNCLASSIFIED"},
+		Version:     version,
+		Description: desc,
+		Metadata:    make(map[string]string)}
+
 	for key, val := range props {
 		rMeta.Metadata[key] = val
 	}
 
-	dType := DataType{Type:fType}
+	dType := DataType{Type: fType}
 
 	switch fType {
-		case "raster" : {
+	case "raster":
+		{
 			//dType.MimeType = "image/tiff"
 			fileData = ingData
 		}
-		case "geojson" : {
+	case "geojson":
+		{
 			dType.MimeType = "application/vnd.geo+json"
 			fileData = ingData
 		}
-		case "text" : {
+	case "text":
+		{
 			dType.MimeType = "application/text"
 			dType.Content = string(ingData)
 			fileData = nil
@@ -131,7 +134,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		return "", addRef(err)
 	}
 
-	if (fileData != nil) {
+	if fileData != nil {
 		resp, err = SubmitMultipart(string(bbuff), (pzAddr + "/data/file"), fName, authKey, fileData)
 	} else {
 		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey)
@@ -149,13 +152,13 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	if err != nil {
 		return "", addRef(err)
 	}
-	
+
 	return result.DataID, addRef(err)
 }
 
 // IngestFile ingests the given file to Piazza
 func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey string,
-				props map[string]string) (string, error) {
+	props map[string]string) (string, error) {
 
 	path := locString(subFold, fName)
 
@@ -173,27 +176,43 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 func GetFileMeta(dataID, pzAddr, authKey string) (*DataDesc, error) {
 
 	url := fmt.Sprintf(`%s/data/%s`, pzAddr, dataID)
-	var respObj struct {Data DataDesc}
+	var respObj struct{ Data DataDesc }
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
 	if err != nil {
 		return nil, addRef(err)
 	}
-	
+
 	return &respObj.Data, nil
 }
 
 // UpdateFileMeta updates the metadata for a given dataID in the S3 bucket
 func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string) error {
-	
-	var meta struct { Metadata map[string]string `json:"metadata"` }
+
+	var meta struct {
+		Metadata map[string]string `json:"metadata"`
+	}
 	meta.Metadata = newMeta
 	jbuff, err := json.Marshal(meta)
 	if err != nil {
 		return addRef(err)
 	}
-	
+
 	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey)
 	return addRef(err)
+}
+
+// SearchFileMeta takes a search string, Pz address, and Pz Auth, and returns
+// a list of all file metadata such that the search string appears somewhere
+// in the metadata.
+func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
+	url := fmt.Sprintf(`%s/data?keyword=%s&perPage=1000`, pzAddr, searchString)
+	var respObj FileDataList
+	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
+	if err != nil {
+		return nil, addRef(err)
+	}
+
+	return respObj.Data, nil
 }
 
 // DeployToGeoServer calls the Pz "provision" endpoint - causing the file indicated
@@ -201,15 +220,15 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string) e
 // the new layer.  If lGroupID is included, the layer is also added to the layer
 // group with that ID.
 func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (string, error) {
-	outJSON := fmt.Sprintf(	`{"dataId":"%s","deploymentGroupId":"%s","deploymentType":"geoserver","type":"access"}`,
-							dataID,
-							lGroupID)
+	outJSON := fmt.Sprintf(`{"dataId":"%s","deploymentGroupId":"%s","deploymentType":"geoserver","type":"access"}`,
+		dataID,
+		lGroupID)
 
 	resp, err := SubmitSinglePart("POST", outJSON, fmt.Sprintf(`%s/deployment`, pzAddr), authKey)
 	if err != nil {
 		return "", addRef(err)
 	}
-		
+
 	jobID, err := GetJobID(resp)
 	if err != nil {
 		return "", addRef(err)
@@ -228,18 +247,18 @@ func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (string, error)
 // uuid for that layer group (or an error).
 func AddGeoServerLayerGroup(pzAddr, authKey string) (string, error) {
 
-	type dataStruct struct{
-		DeploymentGroupID	string		`json:"deploymentGroupId,omitempty"`
-		CreatedBy			string		`json:"createdBy,omitempty"`
-		HasGeoServerLayer	string		`json:"hasGetServerLayer,omitempty"`
+	type dataStruct struct {
+		DeploymentGroupID string `json:"deploymentGroupId,omitempty"`
+		CreatedBy         string `json:"createdBy,omitempty"`
+		HasGeoServerLayer string `json:"hasGetServerLayer,omitempty"`
 	}
 
-	var respObj struct{
-		Type				string		`json:"type,omitempty"`
-		Data				dataStruct	`json:"data,omitempty"`
+	var respObj struct {
+		Type string     `json:"type,omitempty"`
+		Data dataStruct `json:"data,omitempty"`
 	}
 
-	_, err := RequestKnownJSON("POST", "", pzAddr + "/deployment/group", authKey, &respObj)
+	_, err := RequestKnownJSON("POST", "", pzAddr+"/deployment/group", authKey, &respObj)
 
 	return respObj.Data.DeploymentGroupID, addRef(err)
 }

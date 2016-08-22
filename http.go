@@ -160,6 +160,9 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 	fileReq.Header.Add("Authorization", authKey)
 
 	resp, err := client.Do(fileReq)
+	if err != nil {
+		return nil, addRef(err)
+	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return resp, errWithRef("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
 	}
