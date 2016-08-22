@@ -87,8 +87,11 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		errByt, _ := ioutil.ReadAll(resp.Body)
-		return errByt, addRef(err)
+		if resp != nil {
+			errByt, _ := ioutil.ReadAll(resp.Body)
+			return errByt, addRef(err)
+		}
+		return nil, addRef(err)
 	}
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
