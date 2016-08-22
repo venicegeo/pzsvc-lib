@@ -153,6 +153,10 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 	var err error
 	client := HTTPClient()
 
+	if method == "" || url == "" {
+		return nil, errWithRef(`method:"` + method + `", url:"` + url + `".  You must have both.`)
+	}
+
 	if bodyStr != "" {
 		fileReq, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(bodyStr)))
 		if err != nil {
