@@ -20,6 +20,15 @@ import (
 	"strconv"
 )
 
+// TracedError returns an error that includes information
+// about where it was generated
+func TracedError(message string) error {
+	if _, file, line, ok := runtime.Caller(1); ok {
+		return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + message)
+	}
+	return nil
+}
+
 func addRef(err error) error {
 	if err != nil {
 		_, file, line, ok := runtime.Caller(1)
