@@ -252,6 +252,17 @@ func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	return rBytes, addRef(err)
 }
 
+// HTTPOut outputs the given string on the given responseWriter
+// with the given http code.  It is nearly identical in behavior
+// to http.Error, except that it doesn't modify the headers
+// otherwise, allowing us to maintain the Content-Type of
+// application/json, and make things a bit easier for our
+// service consumers to digest.
+func HTTPOut(w http.ResponseWriter, output string, code int) {
+	w.WriteHeader(code)
+	w.Write([]byte(output))
+}
+
 // // GetGateway performs a GET request on the Piazza Gateway
 // func GetGateway(endpoint, pzAuth string, target interface{}) error {
 // 	var (

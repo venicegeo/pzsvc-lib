@@ -220,11 +220,9 @@ func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 // the new layer.  If lGroupID is included, the layer is also added to the layer
 // group with that ID.
 func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (string, error) {
-	outJSON := fmt.Sprintf(`{"dataId":"%s","deploymentGroupId":"%s","deploymentType":"geoserver","type":"access"}`,
-		dataID,
-		lGroupID)
+	outJSON := `{"dataId":"` + dataID + `","deploymentGroupId":"` + lGroupID + `","deploymentType":"geoserver","type":"access"}`
 
-	resp, err := SubmitSinglePart("POST", outJSON, fmt.Sprintf(`%s/deployment`, pzAddr), authKey)
+	resp, err := SubmitSinglePart("POST", outJSON, pzAddr+"/deployment", authKey)
 	if err != nil {
 		return "", addRef(err)
 	}
@@ -250,7 +248,7 @@ func AddGeoServerLayerGroup(pzAddr, authKey string) (string, error) {
 	type dataStruct struct {
 		DeploymentGroupID string `json:"deploymentGroupId,omitempty"`
 		CreatedBy         string `json:"createdBy,omitempty"`
-		HasGeoServerLayer string `json:"hasGetServerLayer,omitempty"`
+		HasGeoServerLayer string `json:"hasGisServerLayer,omitempty"`
 	}
 
 	var respObj struct {
