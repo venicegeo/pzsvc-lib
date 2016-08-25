@@ -89,9 +89,9 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 	if err != nil {
 		if resp != nil {
 			errByt, _ := ioutil.ReadAll(resp.Body)
-			return errByt, addRef(err)
+			return errByt, AddRef(err)
 		}
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
@@ -106,14 +106,14 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 	err := writer.WriteField("data", bodyStr)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	if fileData != nil {
 		var part io.Writer
 		part, err = writer.CreateFormFile("file", filename)
 		if err != nil {
-			return nil, addRef(err)
+			return nil, AddRef(err)
 		}
 		if part == nil {
 			return nil, errWithRef("Failure in Form File Creation.")
@@ -121,18 +121,18 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 		_, err = io.Copy(part, bytes.NewReader(fileData))
 		if err != nil {
-			return nil, addRef(err)
+			return nil, AddRef(err)
 		}
 	}
 
 	err = writer.Close()
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	fileReq, err := http.NewRequest("POST", address, body)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	fileReq.Header.Add("Content-Type", writer.FormDataContentType())
@@ -140,12 +140,12 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 	resp, err := client.Do(fileReq)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return resp, errWithRef("Failed to POST multipart to " + address + " Status: " + resp.Status)
 	}
-	return resp, addRef(err)
+	return resp, AddRef(err)
 }
 
 // SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to the target URL
@@ -163,13 +163,13 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 	if bodyStr != "" {
 		fileReq, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(bodyStr)))
 		if err != nil {
-			return nil, addRef(err)
+			return nil, AddRef(err)
 		}
 		fileReq.Header.Add("Content-Type", "application/json")
 	} else {
 		fileReq, err = http.NewRequest(method, url, nil)
 		if err != nil {
-			return nil, addRef(err)
+			return nil, AddRef(err)
 		}
 	}
 
@@ -177,13 +177,13 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 
 	resp, err := client.Do(fileReq)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return resp, errWithRef("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
 	}
 
-	return resp, addRef(err)
+	return resp, AddRef(err)
 }
 
 // GetJobResponse will repeatedly poll the job status on the given job Id
@@ -201,7 +201,7 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 		}
 		respBuf, err := RequestKnownJSON("GET", "", pzAddr+"/job/"+jobID, authKey, &outpObj)
 		if err != nil {
-			return nil, addRef(err)
+			return nil, AddRef(err)
 		}
 
 		respObj := &outpObj.Data
@@ -236,7 +236,7 @@ func GetJobID(resp *http.Response) (string, error) {
 	if respObj.Data.JobID == "" && err == nil {
 		err = errWithRef("GetJobID: response did not contain Job ID.")
 	}
-	return respObj.Data.JobID, addRef(err)
+	return respObj.Data.JobID, AddRef(err)
 }
 
 // ReadBodyJSON takes the body of either a request object or a response
@@ -246,10 +246,10 @@ func GetJobID(resp *http.Response) (string, error) {
 func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	rBytes, err := ioutil.ReadAll(body)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 	err = json.Unmarshal(rBytes, output)
-	return rBytes, addRef(err)
+	return rBytes, AddRef(err)
 }
 
 // HTTPOut outputs the given string on the given responseWriter

@@ -29,7 +29,7 @@ func FindMySvc(svcName, pzAddr, authKey string) (string, error) {
 	var respObj SvcList
 	_, err := RequestKnownJSON("GET", "", query, authKey, &respObj)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	for _, checkServ := range respObj.Data {
@@ -52,7 +52,7 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 	fmt.Println("Finding")
 	svcID, err := FindMySvc(svcName, pzAddr, authKey)
 	if err != nil {
-		return addRef(err)
+		return AddRef(err)
 	}
 
 	svcClass := ClassType{"UNCLASSIFIED"} // TODO: this will have to be updated at some point.
@@ -75,7 +75,7 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 		_, err = SubmitSinglePart("PUT", string(svcJSON), pzAddr+"/service/"+svcID, authKey)
 	}
 	if err != nil {
-		return addRef(err)
+		return AddRef(err)
 	}
 
 	return nil

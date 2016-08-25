@@ -29,7 +29,9 @@ func TracedError(message string) error {
 	return nil
 }
 
-func addRef(err error) error {
+// AddRef is a simple utility function for adding a local filename and line number
+// on to the beginning of an error message before passing it along.
+func AddRef(err error) error {
 	if err != nil {
 		_, file, line, ok := runtime.Caller(1)
 		if ok == true {
