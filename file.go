@@ -42,12 +42,12 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	return b, nil
@@ -61,7 +61,7 @@ func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	contDisp := resp.Header.Get("Content-Disposition")
@@ -76,7 +76,7 @@ func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
 
 	out, err := os.Create(locString(subFold, filename))
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	defer out.Close()
@@ -131,7 +131,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	jType := IngestReq{dRes, true, "ingest"}
 	bbuff, err := json.Marshal(jType)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	if fileData != nil {
@@ -140,20 +140,20 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey)
 	}
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
-	return result.DataID, addRef(err)
+	return result.DataID, AddRef(err)
 }
 
 // IngestFile ingests the given file to Piazza
@@ -164,7 +164,7 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 
 	fData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 	if len(fData) == 0 {
 		return "", errWithRef(`File "` + fName + `" read as empty.`)
@@ -179,7 +179,7 @@ func GetFileMeta(dataID, pzAddr, authKey string) (*DataDesc, error) {
 	var respObj struct{ Data DataDesc }
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	return &respObj.Data, nil
@@ -194,11 +194,11 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string) e
 	meta.Metadata = newMeta
 	jbuff, err := json.Marshal(meta)
 	if err != nil {
-		return addRef(err)
+		return AddRef(err)
 	}
 
 	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey)
-	return addRef(err)
+	return AddRef(err)
 }
 
 // SearchFileMeta takes a search string, Pz address, and Pz Auth, and returns
@@ -209,7 +209,7 @@ func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 	var respObj FileDataList
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
 	if err != nil {
-		return nil, addRef(err)
+		return nil, AddRef(err)
 	}
 
 	return respObj.Data, nil
@@ -224,17 +224,17 @@ func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (string, error)
 
 	resp, err := SubmitSinglePart("POST", outJSON, pzAddr+"/deployment", authKey)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey)
 	if err != nil {
-		return "", addRef(err)
+		return "", AddRef(err)
 	}
 
 	return result.Deployment.DeplID, nil
@@ -248,7 +248,7 @@ func AddGeoServerLayerGroup(pzAddr, authKey string) (string, error) {
 	type dataStruct struct {
 		DeploymentGroupID string `json:"deploymentGroupId,omitempty"`
 		CreatedBy         string `json:"createdBy,omitempty"`
-		HasGeoServerLayer string `json:"hasGisServerLayer,omitempty"`
+		HasGeoServerLayer bool   `json:"hasGisServerLayer,omitempty"`
 	}
 
 	var respObj struct {
@@ -258,5 +258,5 @@ func AddGeoServerLayerGroup(pzAddr, authKey string) (string, error) {
 
 	_, err := RequestKnownJSON("POST", "", pzAddr+"/deployment/group", authKey, &respObj)
 
-	return respObj.Data.DeploymentGroupID, addRef(err)
+	return respObj.Data.DeploymentGroupID, AddRef(err)
 }
