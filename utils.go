@@ -20,6 +20,15 @@ import (
 	"strconv"
 )
 
+// Error is a type designed for easy serialization to JSON
+type Error struct {
+	Message string `json:"error"`
+}
+
+func (err Error) Error() string {
+	return err.Message
+}
+
 // TracedError returns an error that includes information
 // about where it was generated
 func TracedError(message string) error {
@@ -46,7 +55,7 @@ func errWithRef(errStr string) error {
 			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr)
 		}
 	}
-	return errors.New(errStr)
+	return nil
 }
 
 // SliceToCommaSep takes a string slice, and turns it into a comma-separated
