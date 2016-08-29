@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -35,15 +34,6 @@ const (
 	MethodPut     = "PUT"
 	MethdoDelete  = "DELETE"
 )
-
-var (
-	domain = os.Getenv("DOMAIN")
-)
-
-// Gateway returns the URL of the Piazza Gateway
-func Gateway() string {
-	return "https://pz-gateway." + domain
-}
 
 // HTTPError represents any HTTP error
 type HTTPError struct {
@@ -262,75 +252,3 @@ func HTTPOut(w http.ResponseWriter, output string, code int) {
 	w.WriteHeader(code)
 	w.Write([]byte(output))
 }
-
-// // GetGateway performs a GET request on the Piazza Gateway
-// func GetGateway(endpoint, pzAuth string, target interface{}) error {
-// 	var (
-// 		result       []byte
-// 		err          error
-// 		request      *http.Request
-// 		response     *http.Response
-// 		jsonResponse piazza.JsonResponse
-// 	)
-//
-// 	requestURL := "https://pz-gateway." + domain + endpoint
-// 	if request, err = http.NewRequest("GET", requestURL, nil); err != nil {
-// 		return &HTTPError{Status: http.StatusInternalServerError, Message: "Unable to create new GET request: " + err.Error()}
-// 	}
-// 	request.Header.Set("Authorization", pzAuth)
-//
-// 	if response, err = HTTPClient().Do(request); err != nil {
-// 		return &HTTPError{Status: http.StatusInternalServerError, Message: "Unable to do GET request: " + err.Error()}
-// 	}
-//
-// 	defer response.Body.Close()
-// 	if result, err = ioutil.ReadAll(response.Body); err != nil {
-// 		return &HTTPError{Status: http.StatusInternalServerError, Message: "GET request failed and could not retrieve the message body: " + err.Error()}
-// 	}
-//
-// 	// Check for HTTP errors
-// 	if response.StatusCode < 200 || response.StatusCode > 299 {
-// 		return &HTTPError{Status: response.StatusCode, Message: "GET request failed:\n" + string(result)}
-// 	}
-//
-// 	if err = json.Unmarshal(result, &jsonResponse); err != nil {
-// 		return &HTTPError{Status: http.StatusInternalServerError, Message: "Failed to unmarhsal GET response:\n" + err.Error()}
-// 	}
-//
-// 	if target != nil {
-// 		return jsonResponse.ExtractData(target)
-// 	}
-// 	return nil
-// }
-//
-// // PostGateway performs a GET request on the Piazza Gateway and returns a []byte
-// func PostGateway(endpoint string, body []byte, pzAuth string) ([]byte, error) {
-// 	var (
-// 		result   []byte
-// 		err      error
-// 		request  *http.Request
-// 		response *http.Response
-// 	)
-// 	requestURL := "https://pz-gateway." + domain + endpoint
-// 	if request, err = http.NewRequest("POST", requestURL, bytes.NewBuffer(body)); err != nil {
-// 		return nil, &HTTPError{Status: http.StatusInternalServerError, Message: "Unable to create new POST request: " + err.Error()}
-// 	}
-// 	request.Header.Set("Authorization", pzAuth)
-// 	request.Header.Set("Content-Type", "application/json")
-//
-// 	if response, err = HTTPClient().Do(request); err != nil {
-// 		return nil, &HTTPError{Status: http.StatusInternalServerError, Message: "Unable to do POST request: " + err.Error()}
-// 	}
-//
-// 	defer response.Body.Close()
-// 	if result, err = ioutil.ReadAll(response.Body); err != nil {
-// 		return nil, &HTTPError{Status: http.StatusInternalServerError, Message: "POST request failed and could not retrieve the message body: " + err.Error()}
-// 	}
-//
-// 	// Check for HTTP errors
-// 	if response.StatusCode < 200 || response.StatusCode > 299 {
-// 		return result, &HTTPError{Status: response.StatusCode, Message: "POST request failed:\n" + string(result)}
-// 	}
-//
-// 	return result, err
-// }
