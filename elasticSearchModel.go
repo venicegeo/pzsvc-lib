@@ -23,12 +23,6 @@ for polymorphism hurts here, given how enthusiastically polymorphic both the
 elasticsearch grammar and the piazza backend are in some places
 */
 
-// Elastic Search constants
-const (
-	MappingElementTypeString = "string"
-	MappingElementTypeLong   = "long"
-)
-
 // JobData ...
 type JobData struct {
 	ServiceID  string              `json:"serviceId,omitempty"`

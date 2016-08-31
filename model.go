@@ -259,11 +259,11 @@ type TriggerList struct {
 
 // EventType ...
 type EventType struct {
-	EventTypeID string            `json:"eventTypeId"`
-	Name        string            `json:"name" binding:"required"`
-	Mapping     map[string]string `json:"mapping" binding:"required"`
-	CreatedBy   string            `json:"createdBy"`
-	CreatedOn   time.Time         `json:"createdOn"`
+	EventTypeID string                 `json:"eventTypeId"`
+	Name        string                 `json:"name" binding:"required"`
+	Mapping     map[string]interface{} `json:"mapping" binding:"required"`
+	CreatedBy   string                 `json:"createdBy"`
+	CreatedOn   time.Time              `json:"createdOn"`
 }
 
 // EventTypeList ...

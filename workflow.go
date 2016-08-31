@@ -28,7 +28,7 @@ var (
 
 // GetEventType returns the event type ID and fully qualified name
 // for the specified EventType and its root
-func GetEventType(root string, mapping map[string]string, auth string) (EventType, error) {
+func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth string) (EventType, error) {
 	var (
 		err            error
 		eventTypes     EventTypeList
@@ -39,7 +39,8 @@ func GetEventType(root string, mapping map[string]string, auth string) (EventTyp
 		bytes          []byte
 	)
 	if result, ok = eventTypeMap[root]; !ok {
-		if bytes, err = RequestKnownJSON("GET", "", Gateway()+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
+		if bytes, err = RequestKnownJSON("GET", "", pzGateway+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
+			log.Print("******:")
 			return result, errors.New(err.Error() + "\n" + string(bytes))
 		}
 
@@ -65,7 +66,7 @@ func GetEventType(root string, mapping map[string]string, auth string) (EventTyp
 			if !foundMatch {
 				log.Printf("Found no match for %v; adding.", eventTypeName)
 				eventType := EventType{Name: eventTypeName, Mapping: mapping}
-				if result, err = AddEventType(eventType, auth); err == nil {
+				if result, err = AddEventType(eventType, pzGateway, auth); err == nil {
 					foundDeepMatch = true
 					break
 				} else {
@@ -82,7 +83,7 @@ func GetEventType(root string, mapping map[string]string, auth string) (EventTyp
 }
 
 // AddEventType adds the requested EventType and returns a pointer to what was created
-func AddEventType(eventType EventType, auth string) (EventType, error) {
+func AddEventType(eventType EventType, pzGateway, auth string) (EventType, error) {
 	var (
 		err            error
 		eventTypeBytes []byte
@@ -92,7 +93,7 @@ func AddEventType(eventType EventType, auth string) (EventType, error) {
 		return result, err
 	}
 
-	if eventTypeBytes, err = RequestKnownJSON("POST", string(eventTypeBytes), Gateway()+"/eventType", auth, &result); err != nil {
+	if eventTypeBytes, err = RequestKnownJSON("POST", string(eventTypeBytes), pzGateway+"/eventType", auth, &result); err != nil {
 		err = errors.New(err.Error() + "\n" + string(eventTypeBytes))
 	}
 
@@ -100,20 +101,20 @@ func AddEventType(eventType EventType, auth string) (EventType, error) {
 }
 
 // Events returns the events for the event type ID provided
-func Events(eventTypeID string, auth string) ([]Event, error) {
+func Events(eventTypeID string, pzGateway, auth string) ([]Event, error) {
 
 	var (
 		err       error
 		eventList EventList
 	)
 
-	_, err = RequestKnownJSON("GET", "", Gateway()+"/event?eventTypeId="+string(eventTypeID), auth, &eventList)
+	_, err = RequestKnownJSON("GET", "", pzGateway+"/event?eventTypeId="+string(eventTypeID), auth, &eventList)
 
 	return eventList.Data, err
 }
 
 // AddEvent adds the requested Event and returns what was created
-func AddEvent(event Event, auth string) (Event, error) {
+func AddEvent(event Event, pzGateway, auth string) (Event, error) {
 	var (
 		err        error
 		eventBytes []byte
@@ -123,7 +124,7 @@ func AddEvent(event Event, auth string) (Event, error) {
 		return result, err
 	}
 
-	_, err = RequestKnownJSON("POST", string(eventBytes), Gateway()+"/event", auth, &result)
+	_, err = RequestKnownJSON("POST", string(eventBytes), pzGateway+"/event", auth, &result)
 
 	return result, err
 }
