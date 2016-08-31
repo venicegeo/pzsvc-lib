@@ -219,25 +219,25 @@ func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 // by dataId to be deployed to the local GeoServer instance, and returning the ID of
 // the new layer.  If lGroupID is included, the layer is also added to the layer
 // group with that ID.
-func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (string, error) {
+func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (*DeplStrct, error) {
 	outJSON := `{"dataId":"` + dataID + `","deploymentGroupId":"` + lGroupID + `","deploymentType":"geoserver","type":"access"}`
 
 	resp, err := SubmitSinglePart("POST", outJSON, pzAddr+"/deployment", authKey)
 	if err != nil {
-		return "", AddRef(err)
+		return nil, AddRef(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", AddRef(err)
+		return nil, AddRef(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey)
 	if err != nil {
-		return "", AddRef(err)
+		return nil, AddRef(err)
 	}
 
-	return result.Deployment.DeplID, nil
+	return &result.Deployment, nil
 }
 
 // AddGeoServerLayerGroup takes the bare-bones contact information for the local Piazza

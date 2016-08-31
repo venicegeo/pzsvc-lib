@@ -46,6 +46,7 @@ func AddRef(err error) error {
 		if ok == true {
 			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + err.Error())
 		}
+		return errors.New(`(AddRef: trace failed): ` + err.Error())
 	}
 	return err
 }
