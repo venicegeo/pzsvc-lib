@@ -29,15 +29,6 @@ func (err Error) Error() string {
 	return err.Message
 }
 
-// TracedError returns an error that includes information
-// about where it was generated
-func TracedError(message string) error {
-	if _, file, line, ok := runtime.Caller(1); ok {
-		return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + message)
-	}
-	return nil
-}
-
 // TraceStr is a simple utility function that adds filename and line number
 // to a string.  Primarily intended for error messages, though it is also
 // useful in logging.
