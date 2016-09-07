@@ -42,12 +42,12 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	return b, nil
@@ -55,28 +55,31 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 
 // Download retrieves a file from Pz using the file access API
 func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
+	fName, err := DownloadByURL(pzAddr+"/file/"+dataID, subFold, authKey)
+	if err == nil && fName == "" {
+		return "", ErrWithTrace(`File for DataID ` + dataID + ` unnamed.  Probable ingest error.`)
+	}
+	return fName, err
+}
 
-	resp, err := SubmitSinglePart("GET", "", pzAddr+"/file/"+dataID, authKey)
+// DownloadByURL retrieves a file from Pz using the file access API
+func DownloadByURL(url, subFold, authKey string) (string, error) {
+
+	resp, err := SubmitSinglePart("GET", "", url, authKey)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
 	contDisp := resp.Header.Get("Content-Disposition")
 	_, params, err := mime.ParseMediaType(contDisp)
 	filename := params["filename"]
-	if filename == "" {
-		b := make([]byte, 100)
-		resp.Body.Read(b)
-
-		return "", errWithRef(`File for DataID ` + dataID + ` unnamed.  Probable ingest error.  Initial response characters: ` + string(b))
-	}
 
 	out, err := os.Create(locString(subFold, filename))
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
 	defer out.Close()
@@ -131,7 +134,7 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	jType := IngestReq{dRes, true, "ingest"}
 	bbuff, err := json.Marshal(jType)
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
 	if fileData != nil {
@@ -140,20 +143,20 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		resp, err = SubmitSinglePart("POST", string(bbuff), (pzAddr + "/data"), authKey)
 	}
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey)
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 
-	return result.DataID, AddRef(err)
+	return result.DataID, TraceErr(err)
 }
 
 // IngestFile ingests the given file to Piazza
@@ -164,10 +167,10 @@ func IngestFile(fName, subFold, fType, pzAddr, sourceName, version, authKey stri
 
 	fData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", AddRef(err)
+		return "", TraceErr(err)
 	}
 	if len(fData) == 0 {
-		return "", errWithRef(`File "` + fName + `" read as empty.`)
+		return "", ErrWithTrace(`File "` + fName + `" read as empty.`)
 	}
 	return Ingest(fName, fType, pzAddr, sourceName, version, authKey, fData, props)
 }
@@ -179,7 +182,7 @@ func GetFileMeta(dataID, pzAddr, authKey string) (*DataDesc, error) {
 	var respObj struct{ Data DataDesc }
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	return &respObj.Data, nil
@@ -194,11 +197,11 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string) e
 	meta.Metadata = newMeta
 	jbuff, err := json.Marshal(meta)
 	if err != nil {
-		return AddRef(err)
+		return TraceErr(err)
 	}
 
 	_, err = SubmitSinglePart("POST", string(jbuff), fmt.Sprintf(`%s/data/%s`, pzAddr, dataID), authKey)
-	return AddRef(err)
+	return TraceErr(err)
 }
 
 // SearchFileMeta takes a search string, Pz address, and Pz Auth, and returns
@@ -209,7 +212,7 @@ func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 	var respObj FileDataList
 	_, err := RequestKnownJSON("GET", "", url, authKey, &respObj)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	return respObj.Data, nil
@@ -224,17 +227,17 @@ func DeployToGeoServer(dataID, lGroupID, pzAddr, authKey string) (*DeplStrct, er
 
 	resp, err := SubmitSinglePart("POST", outJSON, pzAddr+"/deployment", authKey)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	jobID, err := GetJobID(resp)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	result, err := GetJobResponse(jobID, pzAddr, authKey)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	return &result.Deployment, nil
@@ -258,5 +261,5 @@ func AddGeoServerLayerGroup(pzAddr, authKey string) (string, error) {
 
 	_, err := RequestKnownJSON("POST", "", pzAddr+"/deployment/group", authKey, &respObj)
 
-	return respObj.Data.DeploymentGroupID, AddRef(err)
+	return respObj.Data.DeploymentGroupID, TraceErr(err)
 }

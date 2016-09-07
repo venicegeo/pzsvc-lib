@@ -38,25 +38,31 @@ func TracedError(message string) error {
 	return nil
 }
 
-// AddRef is a simple utility function for adding a local filename and line number
-// on to the beginning of an error message before passing it along.
-func AddRef(err error) error {
-	if err != nil {
-		_, file, line, ok := runtime.Caller(1)
-		if ok == true {
-			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + err.Error())
-		}
-		return errors.New(`(AddRef: trace failed): ` + err.Error())
+// TraceStr is a simple utility function that adds filename and line number
+// to a string.  Primarily intended for error messages, though it is also
+// useful in logging.
+func TraceStr(errStr string) string {
+	_, file, line, ok := runtime.Caller(1)
+	if ok == true {
+		return `(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr
 	}
-	return err
+	return `(TraceStr: trace failed): ` + errStr
 }
 
-func errWithRef(errStr string) error {
+// TraceErr is a simple utility function for adding a local filename and line number
+// on to the beginning of an error message before passing it along.
+func TraceErr(err error) error {
+	if err != nil {
+		return errors.New(TraceStr(err.Error()))
+	}
+	return nil
+}
+
+// ErrWithTrace is a simple utility function for generating an error based on
+// a string and while adding filename and line number.
+func ErrWithTrace(errStr string) error {
 	if errStr != "" {
-		_, file, line, ok := runtime.Caller(1)
-		if ok == true {
-			return errors.New(`(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr)
-		}
+		return errors.New(TraceStr(errStr))
 	}
 	return nil
 }

@@ -26,15 +26,6 @@ import (
 	"time"
 )
 
-// These can go away when we move to Go 1.6
-const (
-	MethodOptions = "OPTIONS"
-	MethodGet     = "GET"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethdoDelete  = "DELETE"
-)
-
 // HTTPError represents any HTTP error
 type HTTPError struct {
 	Status  int
@@ -79,9 +70,9 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 	if err != nil {
 		if resp != nil {
 			errByt, _ := ioutil.ReadAll(resp.Body)
-			return errByt, AddRef(err)
+			return errByt, TraceErr(err)
 		}
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 	return ReadBodyJSON(&outpObj, resp.Body)
 }
@@ -90,39 +81,42 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 // and returns the response.  Primarily intended to support Ingest calls.
 func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte) (*http.Response, error) {
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	client := HTTPClient()
+	var (
+		body   = &bytes.Buffer{}
+		writer = multipart.NewWriter(body)
+		client = HTTPClient()
+		err    error
+	)
 
-	err := writer.WriteField("data", bodyStr)
+	err = writer.WriteField("data", bodyStr)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	if fileData != nil {
 		var part io.Writer
 		part, err = writer.CreateFormFile("file", filename)
 		if err != nil {
-			return nil, AddRef(err)
+			return nil, TraceErr(err)
 		}
 		if part == nil {
-			return nil, errWithRef("Failure in Form File Creation.")
+			return nil, ErrWithTrace("Failure in Form File Creation.")
 		}
 
 		_, err = io.Copy(part, bytes.NewReader(fileData))
 		if err != nil {
-			return nil, AddRef(err)
+			return nil, TraceErr(err)
 		}
 	}
 
 	err = writer.Close()
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	fileReq, err := http.NewRequest("POST", address, body)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 
 	fileReq.Header.Add("Content-Type", writer.FormDataContentType())
@@ -130,36 +124,38 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 
 	resp, err := client.Do(fileReq)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, errWithRef("Failed to POST multipart to " + address + " Status: " + resp.Status)
+		return resp, ErrWithTrace("Failed to POST multipart to " + address + " Status: " + resp.Status)
 	}
-	return resp, AddRef(err)
+	return resp, TraceErr(err)
 }
 
 // SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to the target URL
 // and returns the result.  Includes the necessary headers.
 func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, error) {
 
-	var fileReq *http.Request
-	var err error
-	client := HTTPClient()
+	var (
+		fileReq *http.Request
+		err     error
+		client  = HTTPClient()
+	)
 
 	if method == "" || url == "" {
-		return nil, errWithRef(`method:"` + method + `", url:"` + url + `".  You must have both.`)
+		return nil, ErrWithTrace(`method:"` + method + `", url:"` + url + `".  You must have both.`)
 	}
 
 	if bodyStr != "" {
 		fileReq, err = http.NewRequest(method, url, bytes.NewBuffer([]byte(bodyStr)))
 		if err != nil {
-			return nil, AddRef(err)
+			return nil, TraceErr(err)
 		}
 		fileReq.Header.Add("Content-Type", "application/json")
 	} else {
 		fileReq, err = http.NewRequest(method, url, nil)
 		if err != nil {
-			return nil, AddRef(err)
+			return nil, TraceErr(err)
 		}
 	}
 
@@ -167,13 +163,13 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 
 	resp, err := client.Do(fileReq)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, errWithRef("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
+		return resp, ErrWithTrace("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
 	}
 
-	return resp, AddRef(err)
+	return resp, TraceErr(err)
 }
 
 // GetJobResponse will repeatedly poll the job status on the given job Id
@@ -191,7 +187,7 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 		}
 		respBuf, err := RequestKnownJSON("GET", "", pzAddr+"/job/"+jobID, authKey, &outpObj)
 		if err != nil {
-			return nil, AddRef(err)
+			return nil, TraceErr(err)
 		}
 
 		respObj := &outpObj.Data
@@ -206,16 +202,16 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 				return respObj.Result, nil
 			}
 			if respObj.Status == "Fail" {
-				return nil, errWithRef("Piazza failure when acquiring DataId.  Response json: " + string(respBuf))
+				return nil, ErrWithTrace("Piazza failure when acquiring DataId.  Response json: " + string(respBuf))
 			}
 			if respObj.Status == "Error" {
-				return nil, errWithRef("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
+				return nil, ErrWithTrace("Piazza error when acquiring DataId.  Response json: " + string(respBuf))
 			}
-			return nil, errWithRef(`Unknown status "` + respObj.Status + `" when acquiring DataId.  Response json: ` + string(respBuf))
+			return nil, ErrWithTrace(`Unknown status "` + respObj.Status + `" when acquiring DataId.  Response json: ` + string(respBuf))
 		}
 	}
 
-	return nil, errWithRef("Never completed.  JobId: " + jobID)
+	return nil, ErrWithTrace("Never completed.  JobId: " + jobID)
 }
 
 // GetJobID is a simple function to extract the job ID from
@@ -224,9 +220,9 @@ func GetJobID(resp *http.Response) (string, error) {
 	var respObj JobInitResp
 	_, err := ReadBodyJSON(&respObj, resp.Body)
 	if respObj.Data.JobID == "" && err == nil {
-		err = errWithRef("GetJobID: response did not contain Job ID.")
+		err = ErrWithTrace("GetJobID: response did not contain Job ID.")
 	}
-	return respObj.Data.JobID, AddRef(err)
+	return respObj.Data.JobID, TraceErr(err)
 }
 
 // ReadBodyJSON takes the body of either a request object or a response
@@ -236,10 +232,13 @@ func GetJobID(resp *http.Response) (string, error) {
 func ReadBodyJSON(output interface{}, body io.ReadCloser) ([]byte, error) {
 	rBytes, err := ioutil.ReadAll(body)
 	if err != nil {
-		return nil, AddRef(err)
+		return nil, TraceErr(err)
 	}
 	err = json.Unmarshal(rBytes, output)
-	return rBytes, AddRef(err)
+	if err != nil {
+		return nil, ErrWithTrace("Unmarshal failed: " + err.Error() + ".  Original input: " + string(rBytes) + ".")
+	}
+	return rBytes, TraceErr(err)
 }
 
 // HTTPOut outputs the given string on the given responseWriter
