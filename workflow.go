@@ -54,7 +54,7 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 					foundMatch = true
 					if reflect.DeepEqual(eventType.Mapping, mapping) {
 						foundDeepMatch = true
-						log.Printf("Found deep match for %v", eventTypeName)
+						log.Printf("Found deep match for %v: %v", eventTypeName, eventType.EventTypeID)
 						result = eventType
 					}
 					break
@@ -85,17 +85,19 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 // AddEventType adds the requested EventType and returns a pointer to what was created
 func AddEventType(eventType EventType, pzGateway, auth string) (EventType, error) {
 	var (
-		err            error
-		eventTypeBytes []byte
-		result         EventType
+		err error
+		etInputBytes,
+		etOutputBytes []byte
+		result EventType
 	)
-	if eventTypeBytes, err = json.Marshal(&eventType); err != nil {
+	if etInputBytes, err = json.Marshal(&eventType); err != nil {
 		return result, err
 	}
 
-	if eventTypeBytes, err = RequestKnownJSON("POST", string(eventTypeBytes), pzGateway+"/eventType", auth, &result); err != nil {
-		err = errors.New(err.Error() + "\n" + string(eventTypeBytes))
+	if etOutputBytes, err = RequestKnownJSON("POST", string(etInputBytes), pzGateway+"/eventType", auth, &result); err != nil {
+		err = errors.New(err.Error() + "\n" + string(etOutputBytes))
 	}
+	log.Printf("When trying to add event type, received %#v\n%v", result, string(etOutputBytes))
 
 	return result, err
 }
