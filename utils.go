@@ -29,22 +29,29 @@ func (err Error) Error() string {
 	return err.Message
 }
 
+// traceCore is the core behind TraceStr, TraceErr, and ErrWithTrace.
+// We'd have used TraceStr instead, but the way that runtime.Caller
+// works means that they have to all be the same function depth away.
+func traceCore(errStr string) string {
+	_, file, line, ok := runtime.Caller(2)
+	if ok == true {
+		return `(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr
+	}
+	return `(Trace: trace failed): ` + errStr
+}
+
 // TraceStr is a simple utility function that adds filename and line number
 // to a string.  Primarily intended for error messages, though it is also
 // useful in logging.
 func TraceStr(errStr string) string {
-	_, file, line, ok := runtime.Caller(1)
-	if ok == true {
-		return `(` + file + `, ` + strconv.Itoa(line) + `): ` + errStr
-	}
-	return `(TraceStr: trace failed): ` + errStr
+	return traceCore(errStr)
 }
 
 // TraceErr is a simple utility function for adding a local filename and line number
 // on to the beginning of an error message before passing it along.
 func TraceErr(err error) error {
 	if err != nil {
-		return errors.New(TraceStr(err.Error()))
+		return errors.New(traceCore(err.Error()))
 	}
 	return nil
 }
@@ -53,7 +60,7 @@ func TraceErr(err error) error {
 // a string and while adding filename and line number.
 func ErrWithTrace(errStr string) error {
 	if errStr != "" {
-		return errors.New(TraceStr(errStr))
+		return errors.New(traceCore(errStr))
 	}
 	return nil
 }
