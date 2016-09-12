@@ -128,10 +128,10 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 	case "geojson":
 		{
 
-			var outFeat *geojson.Feature
+			var outFeat geojson.Feature
 
-			json.Unmarshal(ingData, outFeat)
-			var b, _ = json.Marshal(outFeat.Properties["input_files"])
+			json.Unmarshal(ingData, &outFeat)
+			var b, _ = json.Marshal(outFeat.Properties)
 			return string(b), nil
 
 			/*dType.MimeType = "application/vnd.geo+json"
