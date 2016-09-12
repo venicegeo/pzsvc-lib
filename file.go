@@ -53,17 +53,17 @@ func DownloadBytes(dataID, pzAddr, authKey string) ([]byte, error) {
 	return b, nil
 }
 
-// Download retrieves a file from Pz using the file access API
-func Download(dataID, subFold, pzAddr, authKey string) (string, error) {
-	fName, err := DownloadByURL(pzAddr+"/file/"+dataID, subFold, authKey)
+// DownloadByID retrieves a file from Pz using the file access API
+func DownloadByID(dataID, filename, subFold, pzAddr, authKey string) (string, error) {
+	fName, err := DownloadByURL(pzAddr+"/file/"+dataID, filename, subFold, authKey)
 	if err == nil && fName == "" {
 		return "", ErrWithTrace(`File for DataID ` + dataID + ` unnamed.  Probable ingest error.`)
 	}
 	return fName, err
 }
 
-// DownloadByURL retrieves a file from Pz using the file access API
-func DownloadByURL(url, subFold, authKey string) (string, error) {
+// DownloadByURL retrieves a file from the given URL
+func DownloadByURL(url, filename, subFold, authKey string) (string, error) {
 
 	resp, err := SubmitSinglePart("GET", "", url, authKey)
 	if resp != nil {
@@ -72,11 +72,17 @@ func DownloadByURL(url, subFold, authKey string) (string, error) {
 	if err != nil {
 		return "", TraceErr(err)
 	}
-
-	contDisp := resp.Header.Get("Content-Disposition")
-	_, params, err := mime.ParseMediaType(contDisp)
-	filename := params["filename"]
-
+	if filename == "" {
+		contDisp := resp.Header.Get("Content-Disposition")
+		_, params, err := mime.ParseMediaType(contDisp)
+		if err != nil {
+			return "", TraceErr(err)
+		}
+		filename = params["filename"]
+		if filename == "" {
+			return "", ErrWithTrace(`Input file from URL "` + url + `" was not given a name.`)
+		}
+	}
 	out, err := os.Create(locString(subFold, filename))
 	if err != nil {
 		return "", TraceErr(err)
