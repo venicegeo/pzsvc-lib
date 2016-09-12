@@ -22,8 +22,6 @@ import (
 	"mime"
 	"net/http"
 	"os"
-
-	"github.com/venicegeo/geojson-go/geojson"
 )
 
 // locString simplifies certain local processes that wish to interact with
