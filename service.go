@@ -85,7 +85,10 @@ func ManageRegistration(svcName, svcDesc, svcURL, pzAddr, svcVers, authKey strin
 // to call pzsvc-exec.
 type ExecIn struct {
 	FuncStr    string
-	InFiles    []string
+	InPzFiles  []string
+	InExtURLs  []string
+	InPzNames  []string
+	InExtNames []string
 	OutGeoJSON []string
 	OutGeoTIFF []string
 	OutTxt     []string
@@ -108,10 +111,12 @@ type ExecOut struct {
 func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error) {
 
 	var formVal url.Values
-
 	formVal = make(map[string][]string)
 	formVal.Set("cmd", inpObj.FuncStr)
-	formVal.Set("inFiles", SliceToCommaSep(inpObj.InFiles))
+	formVal.Set("inFiles", SliceToCommaSep(inpObj.InPzFiles))
+	formVal.Set("inFileURLs", SliceToCommaSep(inpObj.InExtURLs))
+	formVal.Set("inPzFileNames", SliceToCommaSep(inpObj.InPzNames))
+	formVal.Set("inExtFileNames", SliceToCommaSep(inpObj.InExtNames))
 	formVal.Set("outGeoJson", SliceToCommaSep(inpObj.OutGeoJSON))
 	formVal.Set("outTiffs", SliceToCommaSep(inpObj.OutGeoTIFF))
 	formVal.Set("outTxt", SliceToCommaSep(inpObj.OutTxt))

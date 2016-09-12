@@ -22,6 +22,8 @@ import (
 	"mime"
 	"net/http"
 	"os"
+
+	"github.com/venicegeo/geojson-go/geojson"
 )
 
 // locString simplifies certain local processes that wish to interact with
@@ -125,8 +127,15 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		}
 	case "geojson":
 		{
-			dType.MimeType = "application/vnd.geo+json"
-			fileData = ingData
+
+			var outFeat *geojson.Feature
+
+			json.Unmarshal(ingData, outFeat)
+			var b, _ = json.Marshal(outFeat.Properties["input_files"])
+			return string(b), nil
+
+			/*dType.MimeType = "application/vnd.geo+json"
+			fileData = ingData*/
 		}
 	case "text":
 		{
