@@ -125,14 +125,8 @@ func Ingest(fName, fType, pzAddr, sourceName, version, authKey string,
 		}
 	case "geojson":
 		{
-
-			if len(ingData) > 600 {
-				return string(ingData[(len(ingData) - 500):]), nil
-			}
-			return string(ingData), nil
-
-			/*dType.MimeType = "application/vnd.geo+json"
-			fileData = ingData*/
+			dType.MimeType = "application/vnd.geo+json"
+			fileData = ingData
 		}
 	case "text":
 		{
