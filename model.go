@@ -241,13 +241,14 @@ type AlertList struct {
 // object, many of its component parts ahve been defined in a
 // separate file.  Please see elasticSearchModel.go for those.
 type Trigger struct {
-	Name      string        `json:"name"`
-	Enabled   bool          `json:"enabled"`
-	Condition TrigCondition `json:"condition"`
-	Job       TrigJob       `json:"job"`
-	CreatedBy string        `json:"createdBy,omitempty"`
-	CreatedOn string        `json:"createdOn,omitempty"`
-	TriggerID string        `json:"triggerId,omitempty"`
+	Name        string        `json:"name"`
+	Enabled     bool          `json:"enabled"`
+	EventTypeID string        `json:"eventTypeId"`
+	Condition   TrigCondition `json:"condition"`
+	Job         TrigJob       `json:"job"`
+	CreatedBy   string        `json:"createdBy,omitempty"`
+	CreatedOn   string        `json:"createdOn,omitempty"`
+	TriggerID   string        `json:"triggerId,omitempty"`
 }
 
 // TriggerList ...

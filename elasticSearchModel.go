@@ -51,17 +51,11 @@ type QueryClause struct {
 	Range map[string]CompClause `json:"range,omitempty"`
 }
 
-// TrigQuery ...
-type TrigQuery struct {
-	Bool struct {
-		Filter []QueryClause `json:"filter"`
-	} `json:"bool"`
-}
-
 // TrigCondition ...
 type TrigCondition struct {
-	EventTypeIDs []string `json:"eventTypeIds"`
-	Query        struct {
-		Query TrigQuery `json:"query"`
+	Query struct {
+		Bool struct {
+			Filter []QueryClause `json:"filter"`
+		} `json:"bool"`
 	} `json:"query"`
 }
