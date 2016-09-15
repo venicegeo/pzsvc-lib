@@ -65,6 +65,9 @@ func DownloadByID(dataID, filename, subFold, pzAddr, authKey string) (string, er
 // DownloadByURL retrieves a file from the given URL
 func DownloadByURL(url, filename, subFold, authKey string) (string, error) {
 
+	var (
+		params map[string]string
+	)
 	resp, err := SubmitSinglePart("GET", "", url, authKey)
 	if resp != nil {
 		defer resp.Body.Close()
@@ -74,7 +77,7 @@ func DownloadByURL(url, filename, subFold, authKey string) (string, error) {
 	}
 	if filename == "" {
 		contDisp := resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(contDisp)
+		_, params, err = mime.ParseMediaType(contDisp)
 		if err != nil {
 			return "", TraceErr(err)
 		}
