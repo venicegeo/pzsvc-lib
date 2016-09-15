@@ -127,7 +127,9 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 		return nil, TraceErr(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, ErrWithTrace("Failed to POST multipart to " + address + " Status: " + resp.Status)
+		defer resp.Body.Close()
+		errByt, _ := ioutil.ReadAll(resp.Body)
+		return resp, ErrWithTrace("Failed to POST multipart to " + address + " Status: " + resp.Status + "\n" + string(errByt))
 	}
 	return resp, TraceErr(err)
 }
@@ -166,7 +168,9 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 		return nil, TraceErr(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return resp, ErrWithTrace("Failed in " + method + " call to " + url + ".  Status : " + resp.Status)
+		defer resp.Body.Close()
+		errByt, _ := ioutil.ReadAll(resp.Body)
+		return resp, ErrWithTrace("Failed in " + method + " call to " + url + ".  Status : " + resp.Status + "\nRequest: " + bodyStr + "\nResponse: " + string(errByt))
 	}
 
 	return resp, TraceErr(err)
