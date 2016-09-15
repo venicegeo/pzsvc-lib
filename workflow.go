@@ -88,16 +88,18 @@ func AddEventType(eventType EventType, pzGateway, auth string) (EventType, error
 		err error
 		etInputBytes,
 		etOutputBytes []byte
+		etr    EventTypeResponse
 		result EventType
 	)
 	if etInputBytes, err = json.Marshal(&eventType); err != nil {
 		return result, err
 	}
 
-	if etOutputBytes, err = RequestKnownJSON("POST", string(etInputBytes), pzGateway+"/eventType", auth, &result); err != nil {
+	if etOutputBytes, err = RequestKnownJSON("POST", string(etInputBytes), pzGateway+"/eventType", auth, &etr); err != nil {
 		err = errors.New(err.Error() + "\n" + string(etOutputBytes))
 	}
-	log.Printf("When trying to add event type, received %#v\n%v", result, string(etOutputBytes))
+	result = etr.Data
+	log.Printf("When trying to add event type, received %#v\n%#v\n%v", etr, result, string(etOutputBytes))
 
 	return result, err
 }

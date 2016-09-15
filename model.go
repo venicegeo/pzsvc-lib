@@ -267,6 +267,11 @@ type EventType struct {
 	CreatedOn   time.Time              `json:"createdOn"`
 }
 
+// EventTypeResponse is solely the response for adding a new EventType
+type EventTypeResponse struct {
+	Data EventType `json:"data"`
+}
+
 // EventTypeList ...
 type EventTypeList struct {
 	Type       string      `json:"type,omitempty"`
