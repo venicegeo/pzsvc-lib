@@ -279,6 +279,11 @@ type EventTypeList struct {
 	Pagination PagStruct   `json:"pagination,omitempty"`
 }
 
+// EventTypeMap ...
+type EventTypeMap struct {
+	EventTypeMap map[string]EventType `json:"eventTypes"`
+}
+
 // Event ...
 type Event struct {
 	EventID      string                 `json:"eventId"`

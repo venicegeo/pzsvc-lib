@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -89,6 +90,7 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 	)
 
 	err = writer.WriteField("data", bodyStr)
+	log.Print(bodyStr)
 	if err != nil {
 		return nil, TraceErr(err)
 	}

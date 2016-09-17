@@ -38,48 +38,54 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 		foundMatch     bool
 		bytes          []byte
 	)
-	if result, ok = eventTypeMap[root]; !ok {
-		if bytes, err = RequestKnownJSON("GET", "", pzGateway+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
-			log.Print("******:")
-			return result, errors.New(err.Error() + "\n" + string(bytes))
-		}
+	if result, ok = eventTypeMap[root]; ok {
+		return result, nil
+	}
+	if bytes, err = RequestKnownJSON("GET", "", pzGateway+"/eventType?perPage=10000", auth, &eventTypes); err != nil {
+		return result, ErrWithTrace(err.Error() + "\n" + string(bytes))
+	}
 
-		// Look for an event type with the same root and same mapping
-		// and add the EventType if needed
-		for version := 0; ; version++ {
-			foundMatch = false
-			eventTypeName := fmt.Sprintf("%v:%v", root, version)
-			for _, eventType := range eventTypes.Data {
-				if eventType.Name == eventTypeName {
-					foundMatch = true
-					if reflect.DeepEqual(eventType.Mapping, mapping) {
-						foundDeepMatch = true
-						log.Printf("Found deep match for %v: %v", eventTypeName, eventType.EventTypeID)
-						result = eventType
-					}
-					break
+	// Look for an event type with the same root and same mapping
+	// and add the EventType if needed
+	for version := 0; ; version++ {
+		foundMatch = false
+		eventTypeName := fmt.Sprintf("%v:%v", root, version)
+		for _, eventType := range eventTypes.Data {
+			if eventType.Name == eventTypeName {
+				foundMatch = true
+				if reflect.DeepEqual(eventType.Mapping, mapping) {
+					foundDeepMatch = true
+					log.Printf("Found deep match for %v: %v", eventTypeName, eventType.EventTypeID)
+					result = eventType
 				}
-			}
-			if foundDeepMatch {
 				break
 			}
-			if !foundMatch {
-				log.Printf("Found no match for %v; adding.", eventTypeName)
-				eventType := EventType{Name: eventTypeName, Mapping: mapping}
-				if result, err = AddEventType(eventType, pzGateway, auth); err == nil {
-					foundDeepMatch = true
-					break
-				} else {
-					return result, err
-				}
+		}
+		if foundDeepMatch {
+			break
+		}
+		if !foundMatch {
+			log.Printf("Found no match for %v; adding.", eventTypeName)
+			eventType := EventType{Name: eventTypeName, Mapping: mapping}
+			if result, err = AddEventType(eventType, pzGateway, auth); err == nil {
+				foundDeepMatch = true
+				break
+			} else {
+				return result, err
 			}
 		}
+	}
 
-		if foundDeepMatch {
-			eventTypeMap[root] = result
-		}
+	if foundDeepMatch {
+		eventTypeMap[root] = result
 	}
 	return result, err
+}
+
+// GetEventTypeMap returns the EventTypeMap. This should not be modified.
+func GetEventTypeMap() EventTypeMap {
+
+	return EventTypeMap{EventTypeMap: eventTypeMap}
 }
 
 // AddEventType adds the requested EventType and returns a pointer to what was created
@@ -99,7 +105,6 @@ func AddEventType(eventType EventType, pzGateway, auth string) (EventType, error
 		err = errors.New(err.Error() + "\n" + string(etOutputBytes))
 	}
 	result = etr.Data
-	log.Printf("When trying to add event type, received %#v\n%#v\n%v", etr, result, string(etOutputBytes))
 
 	return result, err
 }
