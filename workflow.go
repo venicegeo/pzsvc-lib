@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"reflect"
 )
 
@@ -55,7 +56,7 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 				foundMatch = true
 				if reflect.DeepEqual(eventType.Mapping, mapping) {
 					foundDeepMatch = true
-					log.Printf("Found deep match for %v: %v", eventTypeName, eventType.EventTypeID)
+					fmt.Printf("Found deep match for Event Type %v: %v", eventTypeName, eventType.EventTypeID)
 					result = eventType
 				}
 				break
@@ -65,7 +66,7 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 			break
 		}
 		if !foundMatch {
-			log.Printf("Found no match for %v; adding.", eventTypeName)
+			fmt.Printf("Found no match for Event Type %v; adding.", eventTypeName)
 			eventType := EventType{Name: eventTypeName, Mapping: mapping}
 			if result, err = AddEventType(eventType, pzGateway, auth); err == nil {
 				foundDeepMatch = true
@@ -133,7 +134,9 @@ func AddEvent(event Event, pzGateway, auth string) (Event, error) {
 		return result, err
 	}
 
-	_, err = RequestKnownJSON("POST", string(eventBytes), pzGateway+"/event", auth, &result)
+	if _, err = RequestKnownJSON("POST", string(eventBytes), pzGateway+"/event", auth, &result); err != nil {
+		log.Printf("Failed to post event %#v\n%v", event, err.Error())
+	}
 
 	return result, err
 }
@@ -156,4 +159,14 @@ func GetAlerts(perPage, pageNo, trigID, pzAddr, pzAuth string) ([]Alert, error) 
 		return nil, fmt.Errorf("Error: pzsvc.RequestKnownJSON: fail on alert check: " + err.Error())
 	}
 	return outpObj.Data, nil
+}
+
+// WriteEventTypes returns the event types known to bf-handle
+func WriteEventTypes(writer http.ResponseWriter, request *http.Request) {
+	etm := GetEventTypeMap()
+	if b, err := json.Marshal(etm); err == nil {
+		HTTPOut(writer, string(b), http.StatusOK)
+	} else {
+		http.Error(writer, "Marshalling error: "+err.Error()+".", http.StatusInternalServerError)
+	}
 }
