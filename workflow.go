@@ -170,3 +170,21 @@ func WriteEventTypes(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Marshalling error: "+err.Error()+".", http.StatusInternalServerError)
 	}
 }
+
+// AddTrigger adds the requested Trigger and returns what was created
+func AddTrigger(trigger Trigger, pzGateway, auth string) (TriggerResponse, error) {
+	var (
+		err          error
+		triggerBytes []byte
+		result       TriggerResponse
+	)
+	if triggerBytes, err = json.Marshal(&trigger); err != nil {
+		return result, err
+	}
+
+	if _, err = RequestKnownJSON("POST", string(triggerBytes), pzGateway+"/trigger", auth, &result); err != nil {
+		log.Printf("Failed to post trigger %#v\n%v", trigger, err.Error())
+	}
+
+	return result, err
+}

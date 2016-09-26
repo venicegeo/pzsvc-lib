@@ -267,6 +267,12 @@ type TriggerList struct {
 	Pagination PagStruct `json:"pagination,omitempty"`
 }
 
+// TriggerResponse is solely the response for adding a new Service
+type TriggerResponse struct {
+	Type string  `json:"type,omitempty"`
+	Data Trigger `json:"data"`
+}
+
 // ServiceResponse is solely the response for adding a new Service
 type ServiceResponse struct {
 	Type string  `json:"type,omitempty"`
