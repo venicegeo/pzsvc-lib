@@ -145,7 +145,7 @@ type Service struct {
 	Method      string  `json:"method,omitempty"`
 	ResMeta     ResMeta `json:"resourceMetadata,omitempty"`
 	ServiceID   string  `json:"serviceId,omitempty"`
-	Timeout     int     `json:"serviceId,timeout"`
+	Timeout     int     `json:"timeout,omitempty"`
 	URL         string  `json:"url,omitempty"`
 }
 
@@ -182,6 +182,15 @@ type ResMeta struct {
 	Tags          string            `json:"tags,omitempty"`
 	TxtKeyValList []TxtKeyVal       `json:"textKeyValueList,omitempty"`
 	Version       string            `json:"version,omitempty"`
+}
+
+// EventType ...
+type EventType struct {
+	EventTypeID string                 `json:"eventTypeId"`
+	Name        string                 `json:"name" binding:"required"`
+	Mapping     map[string]interface{} `json:"mapping" binding:"required"`
+	CreatedBy   string                 `json:"createdBy"`
+	CreatedOn   time.Time              `json:"createdOn"`
 }
 
 /************************/
@@ -258,17 +267,15 @@ type TriggerList struct {
 	Pagination PagStruct `json:"pagination,omitempty"`
 }
 
-// EventType ...
-type EventType struct {
-	EventTypeID string                 `json:"eventTypeId"`
-	Name        string                 `json:"name" binding:"required"`
-	Mapping     map[string]interface{} `json:"mapping" binding:"required"`
-	CreatedBy   string                 `json:"createdBy"`
-	CreatedOn   time.Time              `json:"createdOn"`
+// ServiceResponse is solely the response for adding a new Service
+type ServiceResponse struct {
+	Type string  `json:"type,omitempty"`
+	Data Service `json:"data"`
 }
 
 // EventTypeResponse is solely the response for adding a new EventType
 type EventTypeResponse struct {
+	Type string    `json:"type,omitempty"`
 	Data EventType `json:"data"`
 }
 
