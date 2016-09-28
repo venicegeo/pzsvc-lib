@@ -124,11 +124,11 @@ func Events(eventTypeID string, pzGateway, auth string) ([]Event, error) {
 }
 
 // AddEvent adds the requested Event and returns what was created
-func AddEvent(event Event, pzGateway, auth string) (Event, error) {
+func AddEvent(event Event, pzGateway, auth string) (EventResponse, error) {
 	var (
 		err        error
 		eventBytes []byte
-		result     Event
+		result     EventResponse
 	)
 	if eventBytes, err = json.Marshal(&event); err != nil {
 		return result, err
