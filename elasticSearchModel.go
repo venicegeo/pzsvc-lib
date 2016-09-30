@@ -26,7 +26,7 @@ elasticsearch grammar and the piazza backend are in some places
 // JobData ...
 type JobData struct {
 	ServiceID  string              `json:"serviceId,omitempty"`
-	DataInputs map[string]DataType `json:"dataInputs,omitempty"`
+	DataInputs map[string]DataType `json:"dataInputs"`
 	DataOutput []DataType          `json:"dataOutput,omitempty"`
 }
 

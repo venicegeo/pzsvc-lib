@@ -314,6 +314,12 @@ type EventList struct {
 	Pagination PagStruct `json:"pagination,omitempty"`
 }
 
+// EventResponse is solely the response for adding a new Event
+type EventResponse struct {
+	Type string `json:"type,omitempty"`
+	Data Event  `json:"data"`
+}
+
 // FileDataList is a list of DataDesc objects.  It is the response object
 // when searching for lists of file metadata, using the /data endpoint
 type FileDataList struct {
