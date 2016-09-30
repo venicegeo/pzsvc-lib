@@ -15,7 +15,9 @@
 package pzsvc
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"runtime"
 	"strconv"
 )
@@ -77,4 +79,18 @@ func SliceToCommaSep(inSlice []string) string {
 		accum = accum + "," + inSlice[i]
 	}
 	return accum
+}
+
+// PsuUUID makes a psuedo-UUID.  It may not achieve cryptographic levels of
+// randomness, and it won't respond properly to standard ways of pulling data
+// out of UUIDs, but it works just fine at generating effectively unique IDs
+// for practical purposes.
+func PsuUUID() (string, error) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
 }

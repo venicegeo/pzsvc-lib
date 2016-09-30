@@ -141,8 +141,7 @@ func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error) {
 		return nil, fmt.Errorf(`pzsvc-exec errors: %s`, SliceToCommaSep(respObj.Errors))
 	}
 
-	fmt.Println("output:")
-	fmt.Println(string(respBytes))
+	fmt.Println("pzsvc-exec returned. Output: " + string(respBytes))
 
 	return &respObj, nil
 }

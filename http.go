@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -90,7 +89,7 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 	)
 
 	err = writer.WriteField("data", bodyStr)
-	log.Print(bodyStr)
+	fmt.Println(TraceStr("file upload initiated"))
 	if err != nil {
 		return nil, TraceErr(err)
 	}
@@ -133,7 +132,7 @@ func SubmitMultipart(bodyStr, address, filename, authKey string, fileData []byte
 		errByt, _ := ioutil.ReadAll(resp.Body)
 		return resp, ErrWithTrace("Failed to POST multipart to " + address + " Status: " + resp.Status + "\n" + string(errByt))
 	}
-	return resp, TraceErr(err)
+	return resp, nil
 }
 
 // SubmitSinglePart sends a single-part GET/POST/PUT/DELETE call to the target URL
@@ -175,7 +174,7 @@ func SubmitSinglePart(method, bodyStr, url, authKey string) (*http.Response, err
 		return resp, ErrWithTrace("Failed in " + method + " call to " + url + ".  Status : " + resp.Status + "\nRequest: " + bodyStr + "\nResponse: " + string(errByt))
 	}
 
-	return resp, TraceErr(err)
+	return resp, nil
 }
 
 // GetJobResponse will repeatedly poll the job status on the given job Id

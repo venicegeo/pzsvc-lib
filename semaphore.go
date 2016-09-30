@@ -20,7 +20,7 @@ type empty struct{}
 
 // Semaphore is a structure that allows limited resources to be
 // allocated across multiple threads.  Semaphores that are left
-// nil are
+// nil provide no restriction to behavior.
 type Semaphore chan empty
 
 // Lock claims a resource, or waits if one is not available.
