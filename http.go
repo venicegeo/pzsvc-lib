@@ -269,3 +269,14 @@ func Preflight(w http.ResponseWriter, r *http.Request) bool {
 
 	return (r.Method == "OPTIONS")
 }
+
+// PrintJSON marshals the given object, turns it into a string, and feeds it to
+// the given ResponseWriter.
+func PrintJSON(w http.ResponseWriter, output interface{}, httpStatus int) {
+	outBuf, err := json.Marshal(output)
+	if err != nil {
+		HTTPOut(w, `{"Errors":"Json marshalling failure.  Data not reportable."}`, http.StatusInternalServerError)
+	} else {
+		HTTPOut(w, string(outBuf), httpStatus)
+	}
+}
