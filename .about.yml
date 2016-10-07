@@ -9,17 +9,17 @@
 name: pzsvc-lib
 
 # This is the display name of your project. (required)
-full_name: The pzsvc Go Library
+full_name: pzsvc-lib
 
 # What is the problem your project solves? What is the solution? Use the
 # format shown below. The #dashboard team will gladly help you put this
 # together for your project. (required)
-description: The purpose of this component is to provide a Gp library for functions useful to services that wish to interact with Piazza
+description: The purpose of this component is to provide a Go library for functions useful to services that wish to interact with Piazza.
 
 # What is the measurable impact of your project? Use the format shown below.
 # The #dashboard team will gladly help you put this together for your project.
 # (required)
-impact: The pzsvc Go Library simplifies the task of writing go services that interact with Piazza, reducing the overall work necessary both to create new services and to maintain those services as Piazza changes over time.
+impact: The pzsvc Go Library simplifies the task of writing Go services that interact with Piazza, reducing the overall work necessary both to create new services and to maintain those services as Piazza changes over time.
 
 # What kind of team owns the repository? (required)
 # values: guild, working-group, project
