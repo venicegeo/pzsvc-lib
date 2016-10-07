@@ -275,7 +275,7 @@ func Preflight(w http.ResponseWriter, r *http.Request) bool {
 func PrintJSON(w http.ResponseWriter, output interface{}, httpStatus int) {
 	outBuf, err := json.Marshal(output)
 	if err != nil {
-		HTTPOut(w, `{"Errors":"Json marshalling failure.  Data not reportable."}`, http.StatusInternalServerError)
+		HTTPOut(w, `{"Errors":"JSON marshal failure: `+TraceStr(err.Error())+`"}`, http.StatusInternalServerError)
 	} else {
 		HTTPOut(w, string(outBuf), httpStatus)
 	}

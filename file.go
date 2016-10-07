@@ -215,7 +215,9 @@ func UpdateFileMeta(dataID, pzAddr, authKey string, newMeta map[string]string) e
 
 // SearchFileMeta takes a search string, Pz address, and Pz Auth, and returns
 // a list of all file metadata such that the search string appears somewhere
-// in the metadata.
+// in the metadata.  It was useful once and may be useful again, but it is not
+// useful now.
+/*
 func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 	url := fmt.Sprintf(`%s/data?keyword=%s&perPage=1000`, pzAddr, searchString)
 	var respObj FileDataList
@@ -225,7 +227,7 @@ func SearchFileMeta(searchString, pzAddr, authKey string) ([]DataDesc, error) {
 	}
 
 	return respObj.Data, nil
-}
+}*/
 
 // DeployToGeoServer calls the Pz "provision" endpoint - causing the file indicated
 // by dataId to be deployed to the local GeoServer instance, and returning the ID of

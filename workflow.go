@@ -85,7 +85,6 @@ func GetEventType(root string, mapping map[string]interface{}, pzGateway, auth s
 
 // GetEventTypeMap returns the EventTypeMap. This should not be modified.
 func GetEventTypeMap() EventTypeMap {
-
 	return EventTypeMap{EventTypeMap: eventTypeMap}
 }
 
