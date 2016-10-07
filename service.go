@@ -145,3 +145,14 @@ func CallPzsvcExec(inpObj *ExecIn) (*ExecOut, error) {
 
 	return &respObj, nil
 }
+
+// TestPiazzaAuth returns an error if it is unable to authenticate
+// with the gateway and authorization provided
+func TestPiazzaAuth(pzGateway, auth string) error {
+
+	if pzGateway == "" {
+		return &HTTPError{Message: "This request requires a 'pzGateway'.", Status: http.StatusBadRequest}
+	}
+	_, err := SubmitSinglePart("GET", "", pzGateway+"/eventType", auth)
+	return err
+}
