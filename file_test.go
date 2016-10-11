@@ -20,17 +20,15 @@ import (
 	//"io"
 	"io/ioutil"
 	//"mime"
-	"net/http"
+	//"net/http"
 	"os"
 	"testing"
 )
 
 func TestDownloadBytes(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{`{"test":"blah"}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
+
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	dataID := "1234ID"
@@ -45,11 +43,8 @@ func TestDownloadBytes(t *testing.T) {
 }
 
 func TestDownloadByID(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{`{"test":"blah"}`, `{"test":"blah"}`, `{"test":"blah"}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	dataID := "1234ID"
@@ -76,7 +71,6 @@ func TestDownloadByID(t *testing.T) {
 }
 
 func TestIngestFile(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{
 		`{"Data":{"JobID":"testID1"}}`,
 		`{"Data":{"Status":"Success", "Result":{"Message":"testStatus1"}}}`,
@@ -84,9 +78,7 @@ func TestIngestFile(t *testing.T) {
 		`{"Data":{"Status":"Success", "Result":{"Message":"testStatus2"}}}`,
 		`{"Data":{"JobID":"testID3"}}`,
 		`{"Data":{"Status":"Success", "Result":{"Message":"testStatus3"}}}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	fileName := "tempTestFile.tmp"
@@ -113,10 +105,7 @@ func TestIngestFile(t *testing.T) {
 }
 
 func TestGetFileMeta(t *testing.T) {
-	testClient := http.Client{}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: nil, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(nil, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	dataID := "1234ID"
@@ -128,10 +117,7 @@ func TestGetFileMeta(t *testing.T) {
 }
 
 func TestUpdateFileMeta(t *testing.T) {
-	testClient := http.Client{}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: nil, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(nil, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	dataID := "1234ID"
@@ -144,11 +130,8 @@ func TestUpdateFileMeta(t *testing.T) {
 }
 
 func TestDeployToGeoServer(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{`{"Data":{"JobID":"testID"}}`, `{"Data":{"Status":"Success", "Result":{"Message":"Job Found."}}}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 	dataID := "1234ID"
@@ -161,11 +144,8 @@ func TestDeployToGeoServer(t *testing.T) {
 }
 
 func TestAddGeoServerLayerGroup(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{`{"type":"typ", "data":{"deploymentGroupId":"deplG", "createdBy":"me", "hasGisServerLayer":false}}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	url := "http://testURL.net"
 	authKey := "testAuthKey"
 

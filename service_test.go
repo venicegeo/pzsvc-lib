@@ -17,7 +17,7 @@ package pzsvc
 import (
 	"encoding/json"
 	//"fmt"
-	"net/http"
+	//"net/http"
 	//"net/url"
 	"testing"
 )
@@ -38,11 +38,8 @@ func TestManageRegistration(t *testing.T) {
 	svcL1 := SvcList{Data: []Service{Service{ServiceID: "123", URL: svcURL, Method: "POST", ResMeta: metaObj}}}
 	svcJSON, _ := json.Marshal(svcL1)
 
-	testClient := http.Client{}
 	outStrs := []string{string(svcJSON), `{"Data":[]}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 
 	sProps := map[string]string{"prop1": "1", "prop2": "2", "prop3": "3"}
 

@@ -19,7 +19,7 @@ import (
 	//	"encoding/json"
 	//	"errors"
 	//	"fmt"
-	"io"
+	//  "io"
 	"io/ioutil"
 	//	"mime/multipart"
 	"net/http"
@@ -29,39 +29,8 @@ import (
 	//	"time"
 )
 
-type testRC struct{ io.Reader }
-
-func (testRC) Close() error { return nil }
-
-type stringSliceMockTransport struct {
-	statusCode int
-	outputs    []string
-	iter       *int
-}
-
-func (t stringSliceMockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-
-	response := &http.Response{
-		Header:     make(http.Header),
-		Request:    req,
-		StatusCode: t.statusCode,
-	}
-	response.Header.Set("Content-Type", "application/json")
-
-	if t.outputs == nil || *t.iter >= len(t.outputs) {
-		response.Body = testRC{bytes.NewBufferString("{}")}
-	} else {
-		response.Body = testRC{bytes.NewBufferString(t.outputs[*t.iter])}
-		*t.iter = *t.iter + 1
-	}
-	return response, nil
-}
-
 func TestSubmitSinglePart(t *testing.T) {
-	testClient := http.Client{}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: nil, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(nil, 250)
 	method := "TRACE"
 	url := "http://testURL.net"
 	bodyStr := "testBody"
@@ -90,13 +59,13 @@ func TestSubmitSinglePart(t *testing.T) {
 		}
 	}
 
-	testClient.Transport = stringSliceMockTransport{statusCode: 500, outputs: nil}
+	SetMockClient(nil, 500)
 	resp, err = SubmitSinglePart(method, bodyStr, url, authKey)
 	if err == nil {
 		t.Error(`SubmitSinglePart: did not respond to http status error properly.`)
 	}
 
-	testClient.Transport = stringSliceMockTransport{statusCode: 100, outputs: nil}
+	SetMockClient(nil, 100)
 	resp, err = SubmitSinglePart(method, bodyStr, url, authKey)
 	if err == nil {
 		t.Error(`SubmitSinglePart: did not respond to http status error properly.`)
@@ -104,9 +73,7 @@ func TestSubmitSinglePart(t *testing.T) {
 }
 
 func TestSubmitMultipart(t *testing.T) {
-	testClient := http.Client{}
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: nil}
-	SetHTTPClient(&testClient)
+	SetMockClient(nil, 250)
 	bodyStr := "testBody"
 	url := "http://testURL.net"
 	fileName := "name"
@@ -117,8 +84,7 @@ func TestSubmitMultipart(t *testing.T) {
 	if err != nil {
 		t.Error(`TestSubmitMultipart: failed on what shoudl have been good run.`)
 	}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 550, outputs: nil, iter: &iterBase}
+	SetMockClient(nil, 550)
 	_, err = SubmitMultipart(bodyStr, url, fileName, authKey, testData)
 	if err == nil {
 		t.Error(`TestSubmitMultipart: passed on what should have been bad status code.`)
@@ -127,14 +93,11 @@ func TestSubmitMultipart(t *testing.T) {
 }
 
 func TestRequestKnownJSON(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{
 		`{"PercentComplete":0, "TimeRemaining":"blah", "TimeSpent":"blah"}`,
 		`XXXXX`,
 	}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	method := "TRACE"
 	url := "http://testURL.net"
 	bodyStr := "testBody"
@@ -151,7 +114,6 @@ func TestRequestKnownJSON(t *testing.T) {
 }
 
 func TestGetJobResponse(t *testing.T) {
-	testClient := http.Client{}
 	outStrs := []string{
 		`{"Data":{"Status":"Error", "Result":{"Message":"Job Not Found."}}}`,
 		`{"Data":{"Status":"Submitted"}}`,
@@ -162,15 +124,13 @@ func TestGetJobResponse(t *testing.T) {
 		`{"Data":{"Status":"Fail"}}`,
 		`{"Data":{"Status":"Error", "Result":{"Message":"Everything Broken."}}}`,
 		`{"Data":{"Status":"Nope"}}`}
-	iterBase := 0
-	testClient.Transport = stringSliceMockTransport{statusCode: 250, outputs: outStrs, iter: &iterBase}
-	SetHTTPClient(&testClient)
+	SetMockClient(outStrs, 250)
 	url := "http://testURL.net"
 	jobID := "testJobID"
 	authKey := "testAuthKey"
 
 	_, err := GetJobResponse(jobID, url, authKey)
-	iter := testClient.Transport.(stringSliceMockTransport).iter
+	iter := HTTPClient().Transport.(stringSliceMockTransport).iter
 	if err != nil {
 		t.Error(`TestGetJobResponse: failed incorrectly - attempt #` + strconv.Itoa(*iter) + `.`)
 	} else if *iter != 6 {
