@@ -74,7 +74,21 @@ func RequestKnownJSON(method, bodyStr, address, authKey string, outpObj interfac
 		}
 		return nil, TraceErr(err)
 	}
-	return ReadBodyJSON(&outpObj, resp.Body)
+	return ReadBodyJSON(outpObj, resp.Body)
+}
+
+// ReqByObjJSON is much like RequestKnownJSON, except that it takes an interface (which
+// it then json-marshals) as its input, rather than an already-marshaled string
+func ReqByObjJSON(method, addr, authKey string, inpObj, outpObj interface{}) ([]byte, error) {
+	byts, err := json.Marshal(inpObj)
+	if err != nil {
+		return nil, TraceErr(err)
+	}
+	byts, err = RequestKnownJSON(method, string(byts), addr, "", outpObj)
+	if err != nil {
+		return nil, TraceErr(err)
+	}
+	return byts, nil
 }
 
 // SubmitMultipart sends a multi-part POST call, including an optional uploaded file,
