@@ -52,7 +52,3 @@ func TestManageRegistration(t *testing.T) {
 		t.Error(`TestManageRegistration: failed on empty registration.  Error: `, err.Error())
 	}
 }
-
-func TestCallPzsvcExec(t *testing.T) {
-	// this test func is waiting on the pzsvc-exec move to json.
-}
