@@ -40,7 +40,18 @@ type stringSliceMockTransport struct {
 	iter       *int
 }
 
-type fakeRespWriter struct{}
+type fakeRespWriter struct {
+	outputString *string
+	statusCode   *int
+}
+
+// GetMockReadCloser generates a mocked but valid ReadCloser
+// object that will provide the given strign when read.  It
+// is intended to support testing of functions that serve
+// http requests
+func GetMockReadCloser(bodyString string) io.ReadCloser {
+	return testRC{bytes.NewBufferString(bodyString)}
+}
 
 // SetMockClient is a utility function for testing purposes.  When called,
 // it sets the current pzsvc client to a mock client.  That client will accept
@@ -68,7 +79,7 @@ func (t stringSliceMockTransport) RoundTrip(req *http.Request) (*http.Response, 
 	response.Header.Set("Content-Type", "application/json")
 
 	if t.outputs == nil || *t.iter >= len(t.outputs) {
-		response.Body = testRC{bytes.NewBufferString("{}")}
+		response.Body = GetMockReadCloser("{}")
 	} else {
 		if t.outputs[*t.iter] == "" {
 			*t.iter = *t.iter + 1
@@ -76,25 +87,30 @@ func (t stringSliceMockTransport) RoundTrip(req *http.Request) (*http.Response, 
 			tempTransport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 			return tempTransport.RoundTrip(req)
 		}
-		response.Body = testRC{bytes.NewBufferString(t.outputs[*t.iter])}
+		response.Body = GetMockReadCloser(t.outputs[*t.iter])
 		*t.iter = *t.iter + 1
 	}
 	return response, nil
 }
 
-// GetMockResponseWriter returns a rudimentary fake response writer object
+// GetMockResponseWriter returns a simple fake response writer object
 // for testing purposes
-func GetMockResponseWriter() http.ResponseWriter {
-	return fakeRespWriter{}
+func GetMockResponseWriter() (http.ResponseWriter, *string, *int) {
+	writer := fakeRespWriter{new(string), new(int)}
+	*writer.outputString = ""
+	*writer.statusCode = 200
+	return writer, writer.outputString, writer.statusCode
 }
 
 func (frw fakeRespWriter) Header() http.Header {
-	return nil
+	return http.Header{}
 }
 
-func (frw fakeRespWriter) Write([]byte) (int, error) {
-	return 0, nil
+func (frw fakeRespWriter) Write(byts []byte) (int, error) {
+	*frw.outputString = *frw.outputString + string(byts)
+	return len(string(byts)), nil
 }
 
-func (frw fakeRespWriter) WriteHeader(int) {
+func (frw fakeRespWriter) WriteHeader(status int) {
+	*frw.statusCode = status
 }

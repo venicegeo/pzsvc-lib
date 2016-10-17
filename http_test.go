@@ -15,7 +15,7 @@
 package pzsvc
 
 import (
-	"bytes"
+	//"bytes"
 	//	"encoding/json"
 	//	"errors"
 	//	"fmt"
@@ -157,7 +157,7 @@ func TestGetJobID(t *testing.T) {
 	bStrings := []string{`b`, `{"PercentComplete":50}`, `{"Data":{"JobID":"` + testID + `"}}`}
 
 	for i, bstr := range bStrings {
-		testBody := testRC{bytes.NewBufferString(bstr)}
+		testBody := GetMockReadCloser(bstr)
 		testResp := http.Response{Body: testBody}
 		testStr, err := GetJobID(&testResp)
 		switch i {
@@ -179,7 +179,7 @@ func TestReadBodyJSON(t *testing.T) {
 
 	for i, bstr := range bStrings {
 		var jp JobProg
-		body := testRC{bytes.NewBufferString(bstr)}
+		body := GetMockReadCloser(bstr)
 		_, err := ReadBodyJSON(&jp, body)
 		if i < 2 && err == nil {
 			t.Error("ReadBodyJson did not throw error on test ", i)
