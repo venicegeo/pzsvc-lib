@@ -194,7 +194,7 @@ func TestHttpResponseWriter(t *testing.T) {
 	method := "TRACE"
 	url := "http://testURL.net"
 	var emptyHolder interface{}
-	rr := httptest.NewRecorder()
+	rr, _, _ := GetMockResponseWriter()
 
 	testData := []byte("testtesttest")
 	xx := bytes.NewBuffer(testData)
