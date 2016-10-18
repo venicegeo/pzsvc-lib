@@ -19,7 +19,7 @@ import (
 	"crypto/tls"
 	//	"encoding/json"
 	//	"errors"
-	//	"fmt"
+	"fmt"
 	"io"
 	//  "io/ioutil"
 	//	"mime/multipart"
@@ -77,6 +77,7 @@ func (t stringSliceMockTransport) RoundTrip(req *http.Request) (*http.Response, 
 		StatusCode: t.statusCode,
 	}
 	response.Header.Set("Content-Type", "application/json")
+	fmt.Printf("Roundtrip called.  Line #%d pulled.\n", *t.iter)
 
 	if t.outputs == nil || *t.iter >= len(t.outputs) {
 		response.Body = GetMockReadCloser("{}")

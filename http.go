@@ -237,11 +237,12 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 // the standard response to job-creating Pz calls
 func GetJobID(resp *http.Response) (string, error) {
 	var respObj JobInitResp
-	_, err := ReadBodyJSON(&respObj, resp.Body)
+	byts, err := ReadBodyJSON(&respObj, resp.Body)
+	err = TraceErr(err)
 	if respObj.Data.JobID == "" && err == nil {
-		err = ErrWithTrace("GetJobID: response did not contain Job ID.")
+		err = ErrWithTrace("GetJobID: response did not contain Job ID.  initial response: " + string(byts))
 	}
-	return respObj.Data.JobID, TraceErr(err)
+	return respObj.Data.JobID, err
 }
 
 // ReadBodyJSON takes the body of either a request object or a response
