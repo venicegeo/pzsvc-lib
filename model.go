@@ -46,7 +46,7 @@ type DataType struct { //name
 }
 
 // FileLoc contains information on where a file is located.  it's represented
-// as an interface in the Pz code, and can be implemented in one fo two ways.
+// as an interface in the Pz code, and can be implemented in one of two ways.
 // Impl01 is the S3 bucket file store implementation.  Impl02 is the shared
 // folder implementation.
 type FileLoc struct {
@@ -87,7 +87,7 @@ type DeplStrct struct {
 // uses a lot of inheritence here.  Any one of five different classes could
 // fill the slots set aside for DataResult objects in a job response.  Impl01
 // is for ingest actions.  Impl02 is for deployment to geoserver.  Impl03 is
-// for errors that occur doing one fo the others.  Impl04 and Impl05 are
+// for errors that occur doing one of the others.  Impl04 and Impl05 are
 // currently unknown.
 type DataResult struct {
 	DataID     string    `json:"dataId,omitempty"`     // Impl01
@@ -156,7 +156,7 @@ type IngestReq struct {
 	Type string   `json:"type,omitempty"` // "ingest"
 }
 
-// ResMeta holds a resource medatadata. It's used broadly
+// ResMeta holds a resource metadata. It's used broadly
 // Worth noting that Pz pays no attention to the contents of the
 // Metadata map field except to act as a passthrough.  Among
 // other things, it's the request object for the "Change metadata"
@@ -184,7 +184,7 @@ type ResMeta struct {
 	Version       string            `json:"version,omitempty"`
 }
 
-// EventType ...
+// EventType is the definition of a Pz EventType.
 type EventType struct {
 	EventTypeID string                 `json:"eventTypeId"`
 	Name        string                 `json:"name" binding:"required"`
@@ -247,7 +247,7 @@ type AlertList struct {
 // a triggerID.  It is also used to represent triggers in the list
 // and search trigger calls.  Additionally, it is used when creating
 // or modifying a trigger.  Due to the complexity of the Trigger
-// object, many of its component parts ahve been defined in a
+// object, many of its component parts have been defined in a
 // separate file.  Please see elasticSearchModel.go for those.
 type Trigger struct {
 	Name        string        `json:"name"`
@@ -260,7 +260,7 @@ type Trigger struct {
 	TriggerID   string        `json:"triggerId,omitempty"`
 }
 
-// TriggerList ...
+// TriggerList is the representation of a list of trigger objects.
 type TriggerList struct {
 	Type       string    `json:"type,omitempty"`
 	Data       []Trigger `json:"data,omitempty"`
@@ -285,19 +285,19 @@ type EventTypeResponse struct {
 	Data EventType `json:"data"`
 }
 
-// EventTypeList ...
+// EventTypeList is the representation of a list of EventType objects.
 type EventTypeList struct {
 	Type       string      `json:"type,omitempty"`
 	Data       []EventType `json:"data,omitempty"`
 	Pagination PagStruct   `json:"pagination,omitempty"`
 }
 
-// EventTypeMap ...
+// EventTypeMap is the definition of an EventTypeMap.
 type EventTypeMap struct {
 	EventTypeMap map[string]EventType `json:"eventTypes"`
 }
 
-// Event ...
+// Event is the definition of a Pz Event.
 type Event struct {
 	EventID      string                 `json:"eventId"`
 	EventTypeID  string                 `json:"eventTypeId" binding:"required"`
@@ -307,7 +307,7 @@ type Event struct {
 	CronSchedule string                 `json:"cronSchedule"`
 }
 
-// EventList ...
+// EventList is the representation of a list of Event objects.
 type EventList struct {
 	Type       string    `json:"type,omitempty"`
 	Data       []Event   `json:"data,omitempty"`
