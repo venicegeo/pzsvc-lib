@@ -20,11 +20,10 @@ import (
 	//	"errors"
 	//	"fmt"
 	//  "io"
-	"bytes"
+
 	"io/ioutil"
 	//	"mime/multipart"
 	"net/http"
-	"net/http/httptest"
 	//	"net/url"
 	"strconv"
 	"testing"
@@ -191,38 +190,38 @@ func TestReqByObjJSON(t *testing.T) {
 
 }
 func TestHttpResponseWriter(t *testing.T) {
-	method := "TRACE"
-	url := "http://testURL.net"
+
 	var emptyHolder interface{}
 	rr, _, _ := GetMockResponseWriter()
-
-	testData := []byte("testtesttest")
-	xx := bytes.NewBuffer(testData)
-
 	HTTPOut(rr, "Test", 200)
 	PrintJSON(rr, emptyHolder, 200)
-	req := httptest.NewRequest(method, url, xx)
-	if Preflight(rr, req) {
-		t.Log("Options")
-	} else {
-		t.Log(req.Header.Get("Origin"))
-		t.Log(req.Header.Get("Access-Control-Allow-Origin"))
-		t.Log(req.Header.Get("Access-Control-Allow-Methods"))
-		t.Log(req.Header.Get("Access-Control-Allow-Headers"))
-	}
-	req.Header.Add("Origin", "set")
-	req.Header.Add("Access-Control-Allow-Origin", "Hit")
-	req.Header.Add("Access-Control-Allow-Methods", "Hat")
-	req.Header.Add("Access-Control-Allow-Headers", "Hot")
+	/*
+		method := "TRACE"
+		url := "http://testURL.net"
+		testData := []byte("testtesttest")
+		xx := bytes.NewBuffer(testData)
+		req := httptest.NewRequest(method, url, xx)
+		if Preflight(rr, req) {
+			t.Log("Options")
+		} else {
+			t.Log(req.Header.Get("Origin"))
+			t.Log(req.Header.Get("Access-Control-Allow-Origin"))
+			t.Log(req.Header.Get("Access-Control-Allow-Methods"))
+			t.Log(req.Header.Get("Access-Control-Allow-Headers"))
+		}
+		req.Header.Add("Origin", "set")
+		req.Header.Add("Access-Control-Allow-Origin", "Hit")
+		req.Header.Add("Access-Control-Allow-Methods", "Hat")
+		req.Header.Add("Access-Control-Allow-Headers", "Hot")
 
-	if Preflight(rr, req) {
-		t.Log("Options")
-	} else {
-		t.Log(req.Header.Get("Origin"))
-		t.Log(req.Header.Get("Access-Control-Allow-Origin"))
-		t.Log(req.Header.Get("Access-Control-Allow-Methods"))
-		t.Log(req.Header.Get("Access-Control-Allow-Headers"))
-	}
+		if Preflight(rr, req) {
+			t.Log("Options")
+		} else {
+			t.Log(req.Header.Get("Origin"))
+			t.Log(req.Header.Get("Access-Control-Allow-Origin"))
+			t.Log(req.Header.Get("Access-Control-Allow-Methods"))
+			t.Log(req.Header.Get("Access-Control-Allow-Headers"))
+		}*/
 
 }
 
