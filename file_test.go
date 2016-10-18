@@ -26,6 +26,7 @@ import (
 )
 
 func TestDownloadBytes(t *testing.T) {
+	t.Log(HTTPClient()) //testing the HTTPClient when cient is nil
 	outStrs := []string{`{"test":"blah"}`}
 	SetMockClient(outStrs, 250)
 
