@@ -20,9 +20,11 @@ import (
 	//	"errors"
 	//	"fmt"
 	//  "io"
+	"bytes"
 	"io/ioutil"
 	//	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	//	"net/url"
 	"strconv"
 	"testing"
@@ -111,6 +113,10 @@ func TestRequestKnownJSON(t *testing.T) {
 	if err == nil {
 		t.Error(`TestRequestKnownJSON: passed on what should have been bad JSON.`)
 	}
+	_, err = RequestKnownJSON("", "", "flack", "flank", &jobProgObj)
+	if err == nil {
+		t.Error(`TestRequestKnownJSON: passed on what should have been bad call.`)
+	}
 }
 
 func TestGetJobResponse(t *testing.T) {
@@ -172,6 +178,53 @@ func TestGetJobID(t *testing.T) {
 		}
 	}
 }
+func TestReqByObjJSON(t *testing.T) {
+	SetMockClient(nil, 250)
+	method := "TEST"
+	url := "http://testURL.net"
+	authKey := "testAuthKey"
+	var emptyHolder interface{}
+	_, err := ReqByObjJSON(method, url, authKey, emptyHolder, emptyHolder)
+	if err == nil {
+		t.Error(`TestReqByObjJSON: passed on what should have been a bad run.`)
+	}
+
+}
+func TestHttpResponseWriter(t *testing.T) {
+	method := "TRACE"
+	url := "http://testURL.net"
+	var emptyHolder interface{}
+	rr := httptest.NewRecorder()
+
+	testData := []byte("testtesttest")
+	xx := bytes.NewBuffer(testData)
+
+	HTTPOut(rr, "Test", 200)
+	PrintJSON(rr, emptyHolder, 200)
+	req := httptest.NewRequest(method, url, xx)
+	if Preflight(rr, req) {
+		t.Log("Options")
+	} else {
+		t.Log(req.Header.Get("Origin"))
+		t.Log(req.Header.Get("Access-Control-Allow-Origin"))
+		t.Log(req.Header.Get("Access-Control-Allow-Methods"))
+		t.Log(req.Header.Get("Access-Control-Allow-Headers"))
+	}
+	req.Header.Add("Origin", "set")
+	req.Header.Add("Access-Control-Allow-Origin", "Hit")
+	req.Header.Add("Access-Control-Allow-Methods", "Hat")
+	req.Header.Add("Access-Control-Allow-Headers", "Hot")
+
+	if Preflight(rr, req) {
+		t.Log("Options")
+	} else {
+		t.Log(req.Header.Get("Origin"))
+		t.Log(req.Header.Get("Access-Control-Allow-Origin"))
+		t.Log(req.Header.Get("Access-Control-Allow-Methods"))
+		t.Log(req.Header.Get("Access-Control-Allow-Headers"))
+	}
+
+}
 
 func TestReadBodyJSON(t *testing.T) {
 
@@ -188,4 +241,29 @@ func TestReadBodyJSON(t *testing.T) {
 			t.Error("ReadBodyJson threw error on test ", i, ".  Error: ", err.Error())
 		}
 	}
+}
+
+func TestTestUtils(t *testing.T) {
+	testData := []byte("testtesttest")
+	mockRespWrite, _, _ := GetMockResponseWriter()
+	mockRespWrite.Header()
+	returnInt, err := mockRespWrite.Write(testData)
+	if err != nil {
+		t.Error("MockRespHeader Write Failed")
+	} else {
+		t.Logf("MockRespHeader Write returns %v", returnInt)
+	}
+	mockRespWrite.WriteHeader(10)
+}
+
+func TestUtils(t *testing.T) {
+	uuidStrings := [3]string{}
+
+	uuidStrings[0], _ = PsuUUID()
+	uuidStrings[1], _ = PsuUUID()
+	uuidStrings[2], _ = PsuUUID()
+
+	uuidSlice := uuidStrings[0:2]
+	t.Log(SliceToCommaSep(uuidSlice))
+
 }
