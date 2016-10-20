@@ -20,8 +20,8 @@ import
 //"net/http"
 //"net/url"
 (
-	"bytes"
-	"net/http/httptest"
+	//"bytes"
+	"net/http"
 	"testing"
 )
 
@@ -31,15 +31,11 @@ func TestEventType(t *testing.T) {
 	if err != nil {
 		t.Error("GetEventType Failed")
 	}
-
-	method := "TRACE"
-	url := "http://testURL.net"
-	rr := httptest.NewRecorder()
-
-	testData := []byte("testtesttest")
-	xx := bytes.NewBuffer(testData)
-	req := httptest.NewRequest(method, url, xx)
-	WriteEventTypes(rr, req)
+	rr, _, _ := GetMockResponseWriter()
+	r := http.Request{}
+	r.Method = "POST"
+	r.Body = GetMockReadCloser(`{"name":what?}`)
+	WriteEventTypes(rr, &r)
 
 }
 
