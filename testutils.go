@@ -100,7 +100,7 @@ func (frw fakeRespWriter) Header() http.Header {
 }
 
 func (frw fakeRespWriter) Write(byts []byte) (int, error) {
-	*frw.outputString = *frw.outputString + string(byts)
+	*frw.outputString = string(byts)
 	return len(string(byts)), nil
 }
 
