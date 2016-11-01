@@ -18,7 +18,7 @@ go version
 go get -u github.com/alecthomas/gometalinter
 gometalinter --install
 
-go get -v github.com/venicegeo/bf-handle/...
+go get -v github.com/venicegeo/pzsvc-lib/...
 
 cd $GOPATH/src/github.com/venicegeo/pzsvc-lib
 
