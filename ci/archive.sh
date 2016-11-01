@@ -8,7 +8,9 @@ export GOPATH=$root/gopath
 
 source $root/ci/vars.sh
 
-mkdir -p $GOPATH $GOPATH/src
+mkdir -p $GOPATH $GOPATH/bin $GOPATH/src $GOPATH/pkg
+
+PATH=$PATH:$GOPATH/bin
 
 go version
 
