@@ -199,7 +199,7 @@ func GetJobResponse(jobID, pzAddr, authKey string) (*DataResult, error) {
 		return nil, fmt.Errorf(`JobID not provided.  Cannot acquire DataResult.`)
 	}
 
-	for i := 0; i < 180; i++ { // will wait up to 3 minutes
+	for i := 0; i < 300; i++ { // will wait up to 5 minutes
 
 		var outpObj struct {
 			Data JobStatusResp `json:"data,omitempty"`
