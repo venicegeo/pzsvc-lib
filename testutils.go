@@ -32,9 +32,10 @@ type stringSliceMockTransport struct {
 	iter       *int
 }
 
-type fakeRespWriter struct {
-	outputString *string
-	statusCode   *int
+// FakeRespWriter is for testing purposes
+type FakeRespWriter struct {
+	OutputString string
+	StatusCode   int
 }
 
 // GetMockReadCloser generates a mocked but valid ReadCloser
@@ -88,22 +89,23 @@ func (t stringSliceMockTransport) RoundTrip(req *http.Request) (*http.Response, 
 
 // GetMockResponseWriter returns a simple fake response writer object
 // for testing purposes
-func GetMockResponseWriter() (http.ResponseWriter, *string, *int) {
-	writer := fakeRespWriter{new(string), new(int)}
-	*writer.outputString = ""
-	*writer.statusCode = 200
-	return writer, writer.outputString, writer.statusCode
+func GetMockResponseWriter() (*FakeRespWriter, string, int) {
+	writer := FakeRespWriter{OutputString: "", StatusCode: 200}
+	return &writer, writer.OutputString, writer.StatusCode
 }
 
-func (frw fakeRespWriter) Header() http.Header {
+// Header returns an empty header
+func (frw *FakeRespWriter) Header() http.Header {
 	return http.Header{}
 }
 
-func (frw fakeRespWriter) Write(byts []byte) (int, error) {
-	*frw.outputString = string(byts)
+// Write sets the output string
+func (frw *FakeRespWriter) Write(byts []byte) (int, error) {
+	frw.OutputString = string(byts)
 	return len(string(byts)), nil
 }
 
-func (frw fakeRespWriter) WriteHeader(status int) {
-	*frw.statusCode = status
+// WriteHeader stores the status code
+func (frw *FakeRespWriter) WriteHeader(status int) {
+	frw.StatusCode = status
 }
